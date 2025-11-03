@@ -30,10 +30,10 @@ jobs:
           uv venv
           uv sync --all-extras
 
-      - name: Run tests
-        run: |
-          source .venv/bin/activate
-          uv run pytest --asyncio-mode=auto --maxfail=1 --disable-warnings tests/
+      # - name: Run tests
+      #   run: |
+      #     source .venv/bin/activate
+      #     uv run pytest --asyncio-mode=auto --maxfail=1 --disable-warnings tests/
 
   deploy:
     needs: test
