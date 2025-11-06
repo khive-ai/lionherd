@@ -106,7 +106,9 @@ class TestPR2Regression:
             # Should return 0 but MUST log the error (missing 'inputs' in kwargs)
             assert result == 0
             assert len(caplog.records) > 0
-            assert any("Failed to calculate embed tokens" in record.message for record in caplog.records)
+            assert any(
+                "Failed to calculate embed tokens" in record.message for record in caplog.records
+            )
             # Verify exc_info was logged (traceback present)
             assert any(record.exc_info is not None for record in caplog.records)
 
@@ -146,7 +148,9 @@ class TestPR2Regression:
             return "success"
 
         # Should retry ConnectionError with default retry_on
-        result = await retry_with_backoff(raises_connection_error, max_retries=3, initial_delay=0.01)
+        result = await retry_with_backoff(
+            raises_connection_error, max_retries=3, initial_delay=0.01
+        )
 
         assert result == "success"
         assert call_count == 3  # Failed twice, succeeded on third attempt
