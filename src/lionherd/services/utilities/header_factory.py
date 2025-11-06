@@ -37,10 +37,18 @@ class HeaderFactory:
         if auth_type == "none":
             # No authentication needed
             pass
-        elif not api_key:
-            raise ValueError("API key is required for authentication")
         else:
-            api_key = api_key.get_secret_value() if isinstance(api_key, SecretStr) else api_key
+            # Dereference SecretStr first, then validate
+            if isinstance(api_key, SecretStr):
+                api_key = api_key.get_secret_value()
+
+            # Validate after dereferencing - check for None, empty, or whitespace
+            if not api_key or not str(api_key).strip():
+                raise ValueError("API key is required for authentication")
+
+            # Strip whitespace for safety
+            api_key = api_key.strip()
+
             if auth_type == "bearer":
                 dict_.update(HeaderFactory.get_bearer_auth_header(api_key))
             elif auth_type == "x-api-key":

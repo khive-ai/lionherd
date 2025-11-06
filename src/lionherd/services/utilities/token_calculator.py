@@ -54,8 +54,8 @@ class TokenCalculator:
 
     @staticmethod
     def calculate_embed_token(inputs: list[str], /, **kwargs) -> int:
-        if "inputs" not in kwargs:
-            raise ValueError("Missing 'inputs' field in payload")
+        if not inputs:
+            raise ValueError("inputs must be a non-empty list of strings")
 
         try:
             tokenizer = tiktoken.get_encoding(

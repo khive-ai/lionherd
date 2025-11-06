@@ -134,3 +134,23 @@ class TestHeaderFactory:
                 auth_type="invalid",  # type: ignore
                 api_key="test-key",
             )
+
+    def test_get_header_whitespace_secret_str(self):
+        """Test that whitespace-only SecretStr raises ValueError."""
+        from pydantic import SecretStr
+
+        with pytest.raises(ValueError, match="API key is required"):
+            HeaderFactory.get_header(
+                auth_type="bearer",
+                api_key=SecretStr("   "),  # Whitespace only
+            )
+
+    def test_get_header_secret_str_with_whitespace_stripped(self):
+        """Test that SecretStr with leading/trailing whitespace is stripped."""
+        from pydantic import SecretStr
+
+        result = HeaderFactory.get_header(
+            auth_type="bearer",
+            api_key=SecretStr("  test-key  "),  # Whitespace around key
+        )
+        assert result["Authorization"] == "Bearer test-key"  # Stripped

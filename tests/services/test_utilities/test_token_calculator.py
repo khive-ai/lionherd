@@ -94,7 +94,6 @@ class TestTokenCalculator:
         """Test calculating tokens for embeddings with valid inputs."""
         result = TokenCalculator.calculate_embed_token(
             ["Hello world", "Test string"],
-            inputs=["Hello world", "Test string"],  # Required field in kwargs
             model="text-embedding-3-small",
         )
         assert isinstance(result, int)
@@ -102,32 +101,24 @@ class TestTokenCalculator:
 
     def test_calculate_embed_token_default_model(self):
         """Test that calculate_embed_token defaults to text-embedding-3-small."""
-        result = TokenCalculator.calculate_embed_token(
-            ["Test"],
-            inputs=["Test"],  # Used from kwargs
-        )
+        result = TokenCalculator.calculate_embed_token(["Test"])
         assert isinstance(result, int)
         assert result > 0
 
-    def test_calculate_embed_token_missing_inputs_field(self):
-        """Test that missing 'inputs' field raises ValueError."""
-        from lionherd.services.utilities.token_calculator import TokenCalculationError
-
-        with pytest.raises(ValueError, match="Missing 'inputs' field"):
+    def test_calculate_embed_token_empty_inputs(self):
+        """Test that empty inputs list raises ValueError."""
+        with pytest.raises(ValueError, match="inputs must be a non-empty list"):
             TokenCalculator.calculate_embed_token(
-                ["Hello world", "Test string"]
-                # Missing inputs kwarg
+                []  # Empty list
             )
 
     def test_calculate_embed_token_exception_handling(self):
         """Test that exceptions in embed calculation raise TokenCalculationError."""
         from lionherd.services.utilities.token_calculator import TokenCalculationError
 
-        with pytest.raises(TokenCalculationError):
-            TokenCalculator.calculate_embed_token(
-                None,  # Invalid input type
-                inputs=[],
-            )
+        # Passing None will fail the "not inputs" check before tokenization
+        with pytest.raises(ValueError, match="inputs must be a non-empty list"):
+            TokenCalculator.calculate_embed_token(None)
 
     def test_tokenize_simple_string(self):
         """Test tokenizing a simple string."""
