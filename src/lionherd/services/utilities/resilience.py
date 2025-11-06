@@ -253,13 +253,13 @@ class RetryConfig:
         exponential_base: Base for exponential backoff calculation
         jitter: Whether to add random jitter to prevent thundering herd
         retry_on: Tuple of exception types that should trigger retries.
-            Defaults to transient errors only (ConnectionError, CircuitBreakerOpenError,
-            TimeoutError, OSError). Avoids retrying programming errors (TypeError,
-            AttributeError, ValueError, etc.).
+            Defaults to NETWORK transient errors only (ConnectionError,
+            CircuitBreakerOpenError). Avoids retrying:
+            - Programming errors: TypeError, AttributeError, ValueError, KeyError
+            - File system errors: FileNotFoundError, PermissionError, IsADirectoryError
+            - Timeouts: TimeoutError (context-dependent, opt-in explicitly)
+            - OS errors: OSError and subclasses (too broad, opt-in explicitly)
 
-            BREAKING CHANGE (v1.0.0): Default changed from (Exception,) to narrow
-            transient-only errors. If you need broad exception retry, explicitly pass:
-            retry_on=(Exception,)
     """
 
     max_retries: int = 3
@@ -268,7 +268,7 @@ class RetryConfig:
     exponential_base: float = 2.0
     jitter: bool = True
     retry_on: tuple[type[Exception], ...] = field(
-        default_factory=lambda: (ConnectionError, CircuitBreakerOpenError, TimeoutError, OSError)
+        default_factory=lambda: (ConnectionError, CircuitBreakerOpenError)
     )
 
     def calculate_delay(self, attempt: int) -> float:
@@ -313,8 +313,6 @@ async def retry_with_backoff(
     retry_on: tuple[type[Exception], ...] = (
         ConnectionError,
         CircuitBreakerOpenError,
-        TimeoutError,
-        OSError,
     ),
     **kwargs,
 ) -> T:
@@ -332,14 +330,12 @@ async def retry_with_backoff(
         exponential_base: Base for exponential calculation (default: 2.0)
         jitter: Add random jitter to prevent thundering herd (default: True)
         retry_on: Tuple of exception types that should trigger retries.
-            Defaults to transient errors (ConnectionError, CircuitBreakerOpenError,
-            TimeoutError, OSError). Does NOT retry programming errors (TypeError,
-            ValueError, etc.) by default.
+            Defaults to NETWORK transient errors (ConnectionError,
+            CircuitBreakerOpenError). Does NOT retry by default:
+            - Programming errors: TypeError, ValueError, AttributeError, KeyError
+            - File system errors: FileNotFoundError, PermissionError, OSError
+            - Timeouts: TimeoutError (context-dependent, opt-in explicitly)
 
-            BREAKING CHANGE (v1.0.0): Default changed from (Exception,) to narrow
-            transient-only errors. Migration:
-            - Old: retry_with_backoff(func)  # Retried ALL exceptions
-            - New: retry_with_backoff(func, retry_on=(Exception,))  # Explicit broad retry
         **kwargs: Keyword arguments for func
 
     Returns:

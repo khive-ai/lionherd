@@ -85,10 +85,15 @@ class TestPR2Regression:
         # Launch multiple concurrent requests
         await asyncio.gather(*(attempt_call() for _ in range(10)))
 
-        # All retry_after values should be consistent (within small timing variance)
+        # All retry_after values should be very close (atomic calculation inside lock)
         assert len(retry_afters) == 10
+        # Verify values are all close to recovery_time=5.0
+        for retry_after in retry_afters:
+            assert 4.99 <= retry_after <= 5.0, f"retry_after={retry_after} out of range"
+        # Check consistency: max variance should be tiny (< 1ms)
+        # Small variance is expected due to time() resolution, but should be minimal
         max_variance = max(retry_afters) - min(retry_afters)
-        assert max_variance < 0.1  # Should be nearly identical (< 100ms variance)
+        assert max_variance < 0.001, f"Variance {max_variance*1000:.3f}ms too large (TOCTOU race?)"
 
     def test_token_calculator_logs_and_raises_on_error(self, caplog):
         """CRIT-1: Verify errors are logged and raise TokenCalculationError.
@@ -154,6 +159,89 @@ class TestPR2Regression:
         # Should retry ConnectionError with default retry_on
         result = await retry_with_backoff(
             raises_connection_error, max_retries=3, initial_delay=0.01
+        )
+
+        assert result == "success"
+        assert call_count == 3  # Failed twice, succeeded on third attempt
+
+    @pytest.mark.asyncio
+    async def test_retry_default_does_not_retry_file_errors(self):
+        """CRIT-2 follow-up: Verify OSError subclasses (FileNotFoundError, PermissionError) are NOT retried.
+
+        Bug Context: Initial P0.2 fix included OSError in retry defaults, but OSError is too broad.
+        It includes non-transient errors like FileNotFoundError and PermissionError.
+
+        This test verifies these file system errors are NOT retried by default.
+        See: Critic Review P0.2 - OSError too broad
+        """
+        # Test FileNotFoundError
+        call_count_fnf = 0
+
+        async def raises_file_not_found():
+            nonlocal call_count_fnf
+            call_count_fnf += 1
+            raise FileNotFoundError("File missing - not transient")
+
+        with pytest.raises(FileNotFoundError):
+            await retry_with_backoff(raises_file_not_found, max_retries=3, initial_delay=0.01)
+
+        assert call_count_fnf == 1  # Should NOT retry
+
+        # Test PermissionError
+        call_count_perm = 0
+
+        async def raises_permission_error():
+            nonlocal call_count_perm
+            call_count_perm += 1
+            raise PermissionError("Access denied - not transient")
+
+        with pytest.raises(PermissionError):
+            await retry_with_backoff(raises_permission_error, max_retries=3, initial_delay=0.01)
+
+        assert call_count_perm == 1  # Should NOT retry
+
+    @pytest.mark.asyncio
+    async def test_retry_default_does_not_retry_other_programming_errors(self):
+        """CRIT-2 comprehensive: Verify AttributeError, ValueError, KeyError are NOT retried.
+
+        This test completes the CRIT-2 coverage by verifying all common programming
+        errors are excluded from default retry behavior.
+        """
+        for exc_type, exc_msg in [
+            (AttributeError, "Missing attribute - programming error"),
+            (ValueError, "Invalid value - programming error"),
+            (KeyError, "Missing key - programming error"),
+        ]:
+            call_count = 0
+
+            async def raises_error():
+                nonlocal call_count
+                call_count += 1
+                raise exc_type(exc_msg)
+
+            with pytest.raises(exc_type):
+                await retry_with_backoff(raises_error, max_retries=3, initial_delay=0.01)
+
+            assert call_count == 1, f"{exc_type.__name__} should not be retried"
+
+    @pytest.mark.asyncio
+    async def test_retry_default_does_retry_circuit_breaker_open(self):
+        """CRIT-2 complement: Verify CircuitBreakerOpenError IS retried.
+
+        CircuitBreakerOpenError is explicitly in the default retry list as it
+        represents a transient service unavailability.
+        """
+        call_count = 0
+
+        async def raises_circuit_breaker_error():
+            nonlocal call_count
+            call_count += 1
+            if call_count < 3:
+                raise CircuitBreakerOpenError("Circuit open", retry_after=0.1)
+            return "success"
+
+        result = await retry_with_backoff(
+            raises_circuit_breaker_error, max_retries=3, initial_delay=0.01
         )
 
         assert result == "success"
