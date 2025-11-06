@@ -1,0 +1,71 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.11, pytest-8.4.2, pluggy-1.6.0 -- /Users/lion/projects/open-source/lionherd/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/lion/projects/open-source/lionherd
+configfile: pyproject.toml
+plugins: asyncio-1.2.0, anyio-4.11.0, xdist-3.8.0, cov-7.0.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 52 items
+
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_kwargs_moves_extra_fields PASSED [  1%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_api_key_from_secret_str PASSED [  3%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_api_key_from_string_literal PASSED [  5%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_api_key_from_env_var PASSED [  7%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_provider_empty_raises PASSED [  9%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_full_url_with_endpoint_params PASSED [ 11%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_request_options_none PASSED [ 13%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_request_options_pydantic_class PASSED [ 15%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_request_options_pydantic_instance PASSED [ 17%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_request_options_dict_no_schema_gen PASSED [ 19%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_full_url_without_endpoint_params PASSED [ 21%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_request_options_generic_exception PASSED [ 23%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_request_options_invalid_type PASSED [ 25%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_serialize_request_options_none PASSED [ 26%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_serialize_request_options_with_model PASSED [ 28%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_update_merges_kwargs PASSED [ 30%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_update_sets_attributes PASSED [ 32%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_update_adds_unknown_to_kwargs PASSED [ 34%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_payload_no_request_options PASSED [ 36%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_payload_with_validation PASSED [ 38%]
+tests/services/test_endpoint_coverage.py::TestEndpointConfig::test_validate_payload_invalid_raises PASSED [ 40%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_init_with_dict_config PASSED [ 42%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_init_with_endpoint_config PASSED [ 44%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_init_with_invalid_config_type PASSED [ 46%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_event_type_property PASSED [ 48%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_request_options_property PASSED [ 50%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_request_options_setter PASSED [ 51%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_normalize_response_default PASSED [ 53%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_create_payload_with_extra_headers PASSED [ 55%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_create_payload_with_kwargs PASSED [ 57%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_create_payload_no_request_options_raises PASSED [ 59%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_call_skip_payload_creation_dict PASSED [ 61%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_call_skip_payload_creation_basemodel PASSED [ 63%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_call_with_retry_only PASSED [ 65%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_call_with_circuit_breaker_only PASSED [ 67%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_call_with_both_retry_and_circuit_breaker PASSED [ 69%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_call_http_success PASSED [ 71%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_call_http_429_raises PASSED [ 73%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_call_http_500_raises PASSED [ 75%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_call_http_non_200_with_json_error PASSED [ 76%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_call_http_non_200_without_json_error PASSED [ 78%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_stream PASSED [ 80%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_stream_http PASSED [ 82%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_stream_http_error PASSED [ 84%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_to_dict_with_retry_config PASSED [ 86%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_to_dict_with_circuit_breaker PASSED [ 88%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_from_dict PASSED [ 90%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_from_dict_invalid_type PASSED [ 92%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_create_http_client PASSED [ 94%]
+tests/services/test_endpoint_coverage.py::TestEndpoint::test_from_dict_with_none_values PASSED [ 96%]
+tests/services/test_endpoint_coverage.py::TestAPICalling::test_invoke PASSED [ 98%]
+tests/services/test_endpoint_coverage.py::TestAPICalling::test_request_property PASSED [100%]
+
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.11.11-final-0 _______________
+
+Name                                      Stmts   Miss Branch BrPart  Cover   Missing
+-------------------------------------------------------------------------------------
+src/lionherd/services/types/endpoint.py     215      3     72      2    98%   65->69, 98, 106-107, 459->462
+-------------------------------------------------------------------------------------
+TOTAL                                       215      3     72      2    98%
+============================== 52 passed in 0.39s ==============================

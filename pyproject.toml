@@ -3,7 +3,11 @@ name = "lionherd"
 version = "1.0.0-alpha"
 description = "Core utilities, base classes, and protocols for lionherd ecosystem"
 requires-python = ">=3.11"
-dependencies = ["lionherd-core>=1.0.0a0"]
+dependencies = [
+  "lionherd-core>=1.0.0a2",
+  "httpx>=0.28.1",
+  "tiktoken>=0.8.0",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -14,6 +18,7 @@ packages = ["src/lionherd"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"
 markers = [
   "unit: Unit tests",
   "property: Property-based tests",
@@ -25,6 +30,7 @@ filterwarnings = ["ignore::RuntimeWarning"]
 dev = [
   "pre-commit>=4.3.0",
   "pytest>=8.4.2",
+  "pytest-asyncio>=1.2.0",
   "pytest-cov>=7.0.0",
   "pytest-xdist>=3.5.0",
   "ruff>=0.14.3",
