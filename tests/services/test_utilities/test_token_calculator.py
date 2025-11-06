@@ -92,45 +92,42 @@ class TestTokenCalculator:
 
     def test_calculate_embed_token_valid(self):
         """Test calculating tokens for embeddings with valid inputs."""
-        # NOTE: Due to implementation bug (tokenize without encoding_name), this returns 0
-        # The function calls _calculate_embed_item which calls tokenize without encoding_name
-        # This triggers ValueError when getting decoder, caught by try/except, returns 0
         result = TokenCalculator.calculate_embed_token(
             ["Hello world", "Test string"],
             inputs=["Hello world", "Test string"],  # Required field in kwargs
             model="text-embedding-3-small",
         )
         assert isinstance(result, int)
-        # Due to encoding_name bug in call chain, returns 0
-        assert result == 0
+        assert result > 0
 
     def test_calculate_embed_token_default_model(self):
         """Test that calculate_embed_token defaults to text-embedding-3-small."""
-        # Due to encoding_name bug, this also returns 0
         result = TokenCalculator.calculate_embed_token(
             ["Test"],
             inputs=["Test"],  # Used from kwargs
         )
         assert isinstance(result, int)
-        # Due to encoding_name bug in call chain, returns 0
-        assert result == 0
+        assert result > 0
 
     def test_calculate_embed_token_missing_inputs_field(self):
-        """Test that missing 'inputs' field returns 0."""
-        result = TokenCalculator.calculate_embed_token(
-            ["Hello world", "Test string"]
-            # Missing inputs kwarg
-        )
-        assert result == 0
+        """Test that missing 'inputs' field raises ValueError."""
+        from lionherd.services.utilities.token_calculator import TokenCalculationError
+
+        with pytest.raises(ValueError, match="Missing 'inputs' field"):
+            TokenCalculator.calculate_embed_token(
+                ["Hello world", "Test string"]
+                # Missing inputs kwarg
+            )
 
     def test_calculate_embed_token_exception_handling(self):
-        """Test that exceptions in embed calculation return 0."""
-        # This will trigger the outer exception handler
-        result = TokenCalculator.calculate_embed_token(
-            None,  # Invalid input type
-            inputs=[],
-        )
-        assert result == 0
+        """Test that exceptions in embed calculation raise TokenCalculationError."""
+        from lionherd.services.utilities.token_calculator import TokenCalculationError
+
+        with pytest.raises(TokenCalculationError):
+            TokenCalculator.calculate_embed_token(
+                None,  # Invalid input type
+                inputs=[],
+            )
 
     def test_tokenize_simple_string(self):
         """Test tokenizing a simple string."""
@@ -184,36 +181,33 @@ class TestTokenCalculator:
         assert decoded == "Hello world"
 
     def test_tokenize_exception_handling(self):
-        """Test that tokenize handles exceptions and returns 0."""
+        """Test that tokenize raises TokenCalculationError on failures."""
+        from lionherd.services.utilities.token_calculator import TokenCalculationError
 
         # Create a broken tokenizer that raises an exception
         def broken_tokenizer(s):
             raise RuntimeError("Tokenizer failed")
 
-        result = TokenCalculator.tokenize(
-            "test", encoding_name="cl100k_base", tokenizer=broken_tokenizer
-        )
-        assert result == 0
+        with pytest.raises(TokenCalculationError):
+            TokenCalculator.tokenize(
+                "test", encoding_name="cl100k_base", tokenizer=broken_tokenizer
+            )
 
     def test_calculate_chatitem_string(self):
         """Test _calculate_chatitem with string input."""
-        # When tokenizer is passed without encoding_name, tokenize() will fail trying to get decoder
-        # The exception is caught by _calculate_chatitem's try/except, returns 0
         encoding = tiktoken.get_encoding("o200k_base")
         result = TokenCalculator._calculate_chatitem("Hello", encoding.encode, "gpt-4o")
-        # Due to encoding_name being passed to tokenize causing ValueError, returns 0
-        assert result == 0
+        assert isinstance(result, int)
+        assert result > 0
 
     def test_calculate_chatitem_dict_with_text(self):
         """Test _calculate_chatitem with dict containing 'text'."""
-        # NOTE: Line 89 has a bug - it calls _calculate_chatitem without tokenizer/model_name
-        # This will raise TypeError, caught by except, returns 0
         encoding = tiktoken.get_encoding("o200k_base")
         result = TokenCalculator._calculate_chatitem(
             {"type": "text", "text": "Hello"}, encoding.encode, "gpt-4o"
         )
-        # Due to the bug on line 89, this returns 0 (exception caught)
-        assert result == 0
+        assert isinstance(result, int)
+        assert result > 0
 
     def test_calculate_chatitem_dict_with_image_url(self):
         """Test _calculate_chatitem with dict containing 'image_url'."""
@@ -227,11 +221,10 @@ class TestTokenCalculator:
 
     def test_calculate_chatitem_list(self):
         """Test _calculate_chatitem with list of strings."""
-        # List recursively calls _calculate_chatitem, which will fail on tokenize without encoding_name
         encoding = tiktoken.get_encoding("o200k_base")
         result = TokenCalculator._calculate_chatitem(["Hello", "World"], encoding.encode, "gpt-4o")
-        # Each string element triggers ValueError in tokenize, caught by try/except, returns 0
-        assert result == 0
+        assert isinstance(result, int)
+        assert result > 0
 
     def test_calculate_chatitem_nested_list(self):
         """Test _calculate_chatitem with nested list."""
@@ -257,29 +250,26 @@ class TestTokenCalculator:
 
     def test_calculate_embed_item_string(self):
         """Test _calculate_embed_item with string input."""
-        # When tokenizer is passed without encoding_name, tokenize() raises ValueError
         encoding = tiktoken.get_encoding("cl100k_base")
         result = TokenCalculator._calculate_embed_item("Hello world", encoding.encode)
-        # ValueError caught by try/except, returns 0
-        assert result == 0
+        assert isinstance(result, int)
+        assert result > 0
 
     def test_calculate_embed_item_list(self):
         """Test _calculate_embed_item with list input."""
-        # List recursively calls _calculate_embed_item, which fails on tokenize
         encoding = tiktoken.get_encoding("cl100k_base")
         result = TokenCalculator._calculate_embed_item(["Hello", "World", "Test"], encoding.encode)
-        # Each element triggers ValueError, sum of zeros = 0
-        assert result == 0
+        assert isinstance(result, int)
+        assert result > 0
 
     def test_calculate_embed_item_nested_list(self):
         """Test _calculate_embed_item with nested list."""
-        # Nested list recursively calls _calculate_embed_item, which fails on tokenize
         encoding = tiktoken.get_encoding("cl100k_base")
         result = TokenCalculator._calculate_embed_item(
             [["Hello", "World"], ["Test"]], encoding.encode
         )
-        # All elements fail, sum = 0
-        assert result == 0
+        assert isinstance(result, int)
+        assert result > 0
 
     def test_calculate_embed_item_exception_handling(self):
         """Test _calculate_embed_item with None tokenizer."""
@@ -308,5 +298,5 @@ class TestTokenCalculator:
         result = TokenCalculator._calculate_chatitem(
             {"type": "other", "data": "something"}, encoding.encode, "gpt-4o"
         )
-        # When dict has neither 'text' nor 'image_url', function returns None (implicit)
-        assert result is None
+        # When dict has neither 'text' nor 'image_url', function returns 0
+        assert result == 0

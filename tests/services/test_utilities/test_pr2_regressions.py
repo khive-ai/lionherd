@@ -90,27 +90,31 @@ class TestPR2Regression:
         max_variance = max(retry_afters) - min(retry_afters)
         assert max_variance < 0.1  # Should be nearly identical (< 100ms variance)
 
-    def test_token_calculator_logs_exceptions(self, caplog):
-        """CRIT-1: Verify exceptions are logged before returning 0.
+    def test_token_calculator_logs_and_raises_on_error(self, caplog):
+        """CRIT-1: Verify errors are logged and raise TokenCalculationError.
 
-        Bug: Silent `except Exception: return 0` hid all errors.
-        Fix: Now logs with exc_info=True before returning 0.
+        Bug: Silent `except Exception: return 0` hid all errors (couldn't distinguish
+        empty input from actual failure).
+        Fix: Now logs with exc_info=True and raises TokenCalculationError for real errors.
         """
-        with caplog.at_level(logging.ERROR):
-            # Force an error by passing invalid inputs that will trigger exception
-            # Use calculate_embed_token with missing 'inputs' key to trigger logged exception
-            result = TokenCalculator.calculate_embed_token(
-                ["test input"], model="text-embedding-3-small"
-            )
+        from lionherd.services.utilities.token_calculator import TokenCalculationError
 
-            # Should return 0 but MUST log the error (missing 'inputs' in kwargs)
-            assert result == 0
+        with caplog.at_level(logging.ERROR):
+            # Force an error by passing invalid tokenizer that will fail
+            def failing_tokenizer(text):
+                raise RuntimeError("Simulated tokenizer failure")
+
+            # Should raise TokenCalculationError (not return 0)
+            with pytest.raises(TokenCalculationError) as exc_info:
+                TokenCalculator.tokenize("test", tokenizer=failing_tokenizer)
+
+            # Verify error was logged before raising
             assert len(caplog.records) > 0
-            assert any(
-                "Failed to calculate embed tokens" in record.message for record in caplog.records
-            )
+            assert any("Tokenization failed" in record.message for record in caplog.records)
             # Verify exc_info was logged (traceback present)
             assert any(record.exc_info is not None for record in caplog.records)
+            # Verify exception chain preserved
+            assert "Simulated tokenizer failure" in str(exc_info.value.__cause__)
 
     @pytest.mark.asyncio
     async def test_retry_default_does_not_retry_programming_errors(self):

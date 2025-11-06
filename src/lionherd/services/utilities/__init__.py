@@ -11,6 +11,7 @@ from .resilience import (
     RetryConfig,
     retry_with_backoff,
 )
+from .token_calculator import TokenCalculationError, TokenCalculator
 
 __all__ = (
     "CircuitBreaker",
@@ -19,5 +20,7 @@ __all__ = (
     "RateLimitConfig",
     "RetryConfig",
     "TokenBucket",
+    "TokenCalculationError",
+    "TokenCalculator",
     "retry_with_backoff",
 )

@@ -31,7 +31,7 @@ class TestRetryConfig:
         assert config.max_delay == 60.0
         assert config.exponential_base == 2.0
         assert config.jitter is True
-        assert config.retry_on == (ConnectionError, CircuitBreakerOpenError)
+        assert config.retry_on == (ConnectionError, CircuitBreakerOpenError, TimeoutError, OSError)
 
     def test_custom_values(self):
         """Test custom configuration values."""

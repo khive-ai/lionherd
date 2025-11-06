@@ -9,6 +9,12 @@ import tiktoken
 logger = logging.getLogger(__name__)
 
 
+class TokenCalculationError(Exception):
+    """Raised when token calculation fails due to encoding/model errors."""
+
+    pass
+
+
 def get_encoding_name(value: str | None) -> str:
     """Get encoding name for model, with fallback chain.
 
@@ -48,10 +54,10 @@ class TokenCalculator:
 
     @staticmethod
     def calculate_embed_token(inputs: list[str], /, **kwargs) -> int:
-        try:
-            if "inputs" not in kwargs:
-                raise ValueError("Missing 'inputs' field in payload")
+        if "inputs" not in kwargs:
+            raise ValueError("Missing 'inputs' field in payload")
 
+        try:
             tokenizer = tiktoken.get_encoding(
                 get_encoding_name(kwargs.get("model", "text-embedding-3-small"))
             ).encode
@@ -59,9 +65,12 @@ class TokenCalculator:
             return sum(
                 TokenCalculator._calculate_embed_item(i, tokenizer=tokenizer) for i in inputs
             )
+        except TokenCalculationError:
+            # Re-raise from nested calls
+            raise
         except Exception as e:
             logger.error(f"Failed to calculate embed tokens: {e}", exc_info=True)
-            return 0
+            raise TokenCalculationError(f"Embed token calculation failed: {e}") from e
 
     @staticmethod
     def tokenize(
@@ -80,7 +89,9 @@ class TokenCalculator:
             encoding_name = get_encoding_name(encoding_name)
             tokenizer = tiktoken.get_encoding(encoding_name).encode
         if not callable(decoder):
-            decoder = tiktoken.get_encoding(encoding_name).decode
+            # Use encoding_name if available, otherwise fallback to default
+            decoder_encoding = encoding_name if encoding_name else "o200k_base"
+            decoder = tiktoken.get_encoding(decoder_encoding).decode
 
         try:
             if return_tokens:
@@ -90,16 +101,17 @@ class TokenCalculator:
                 return tokenizer(s_)
             return len(tokenizer(s_))
         except Exception as e:
+            # Actual encoding failure during tokenization - this is an error
             logger.error(
                 f"Tokenization failed for input (len={len(s_) if s_ else 0}): {e}", exc_info=True
             )
-            return 0
+            raise TokenCalculationError(f"Tokenization failed: {e}") from e
 
     @staticmethod
     def _calculate_chatitem(i_, tokenizer: Callable, model_name: str) -> int:
         try:
             if isinstance(i_, str):
-                return TokenCalculator.tokenize(i_, encoding_name=model_name, tokenizer=tokenizer)
+                return TokenCalculator.tokenize(i_, tokenizer=tokenizer)
 
             if isinstance(i_, dict):
                 if "text" in i_:
@@ -113,12 +125,18 @@ class TokenCalculator:
                 return sum(
                     TokenCalculator._calculate_chatitem(x, tokenizer, model_name) for x in i_
                 )
+
+            # Unknown type - return 0 is valid (no text content)
+            return 0
+        except TokenCalculationError:
+            # Re-raise tokenization errors from nested calls
+            raise
         except Exception as e:
             logger.error(
                 f"Failed to calculate chat item tokens (type={type(i_).__name__}): {e}",
                 exc_info=True,
             )
-            return 0
+            raise TokenCalculationError(f"Chat item token calculation failed: {e}") from e
 
     @staticmethod
     def _calculate_embed_item(s_, tokenizer: Callable) -> int:
@@ -128,9 +146,15 @@ class TokenCalculator:
 
             if isinstance(s_, list):
                 return sum(TokenCalculator._calculate_embed_item(x, tokenizer) for x in s_)
+
+            # Unknown type - return 0 is valid (no text content)
+            return 0
+        except TokenCalculationError:
+            # Re-raise tokenization errors from nested calls
+            raise
         except Exception as e:
             logger.error(
                 f"Failed to calculate embed item tokens (type={type(s_).__name__}): {e}",
                 exc_info=True,
             )
-            return 0
+            raise TokenCalculationError(f"Embed item token calculation failed: {e}") from e
