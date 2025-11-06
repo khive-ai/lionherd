@@ -148,8 +148,12 @@ class CircuitBreaker:
             elif new_state == CircuitState.CLOSED:
                 self.failure_count = 0
 
-    async def _check_state(self) -> bool:
-        """Check if request can proceed."""
+    async def _check_state(self) -> tuple[bool, float]:
+        """Check if request can proceed.
+
+        Returns:
+            Tuple of (can_proceed, retry_after_seconds)
+        """
         async with self._lock:
             now = current_time()
 
@@ -166,7 +170,7 @@ class CircuitBreaker:
                         f"Try again in {recovery_remaining:.2f}s"
                     )
 
-                    return False
+                    return False, recovery_remaining
 
             if self.state == CircuitState.HALF_OPEN:
                 # Only allow a limited number of calls in half-open state
@@ -177,21 +181,20 @@ class CircuitBreaker:
                         f"Circuit '{self.name}' is HALF_OPEN and at capacity. Try again later."
                     )
 
-                    return False
+                    return False, self.recovery_time
 
                 self._half_open_calls += 1
 
-            return True
+            return True, 0.0
 
     async def execute(self, func: Callable[..., Awaitable[T]], *args: Any, **kwargs: Any) -> T:
         """Execute with circuit breaker protection."""
-        # Check if circuit allows this call
-        can_proceed = await self._check_state()
+        # Check if circuit allows this call (atomically returns retry_after to avoid TOCTOU)
+        can_proceed, retry_after = await self._check_state()
         if not can_proceed:
-            remaining = self.recovery_time - (current_time() - self.last_failure_time)
             raise CircuitBreakerOpenError(
-                f"Circuit breaker '{self.name}' is open. Retry after {remaining:.2f} seconds",
-                retry_after=remaining,
+                f"Circuit breaker '{self.name}' is open. Retry after {retry_after:.2f} seconds",
+                retry_after=retry_after,
             )
 
         try:
@@ -249,7 +252,9 @@ class RetryConfig:
         max_delay: Maximum delay in seconds between retries
         exponential_base: Base for exponential backoff calculation
         jitter: Whether to add random jitter to prevent thundering herd
-        retry_on: Tuple of exception types that should trigger retries
+        retry_on: Tuple of exception types that should trigger retries.
+            Defaults to transient errors only (ConnectionError, CircuitBreakerOpenError).
+            Avoids retrying programming errors (TypeError, AttributeError, etc.).
     """
 
     max_retries: int = 3
@@ -257,7 +262,9 @@ class RetryConfig:
     max_delay: float = 60.0
     exponential_base: float = 2.0
     jitter: bool = True
-    retry_on: tuple[type[Exception], ...] = field(default_factory=lambda: (Exception,))
+    retry_on: tuple[type[Exception], ...] = field(
+        default_factory=lambda: (ConnectionError, CircuitBreakerOpenError)
+    )
 
     def calculate_delay(self, attempt: int) -> float:
         """Calculate delay with exponential backoff + optional jitter.
@@ -298,7 +305,7 @@ async def retry_with_backoff(
     max_delay: float = 60.0,
     exponential_base: float = 2.0,
     jitter: bool = True,
-    retry_on: tuple[type[Exception], ...] = (Exception,),
+    retry_on: tuple[type[Exception], ...] = (ConnectionError, CircuitBreakerOpenError),
     **kwargs,
 ) -> T:
     """Retry async function with exponential backoff using lionherd-core.
@@ -314,7 +321,9 @@ async def retry_with_backoff(
         max_delay: Maximum delay cap in seconds (default: 60.0)
         exponential_base: Base for exponential calculation (default: 2.0)
         jitter: Add random jitter to prevent thundering herd (default: True)
-        retry_on: Tuple of exception types that should trigger retries
+        retry_on: Tuple of exception types that should trigger retries.
+            Defaults to transient errors (ConnectionError, CircuitBreakerOpenError).
+            Does NOT retry programming errors (TypeError, ValueError, etc.) by default.
         **kwargs: Keyword arguments for func
 
     Returns:

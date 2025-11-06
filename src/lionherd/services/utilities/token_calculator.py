@@ -1,20 +1,33 @@
 # Copyright (c) 2023-2025, HaiyangLi <quantocean.li at gmail dot com>
 # SPDX-License-Identifier: Apache-2.0
 
+import logging
 from collections.abc import Callable
 
 import tiktoken
 
+logger = logging.getLogger(__name__)
 
-def get_encoding_name(value: str) -> str:
+
+def get_encoding_name(value: str | None) -> str:
+    """Get encoding name for model, with fallback chain.
+
+    Returns:
+        Encoding name (defaults to o200k_base if model/encoding not found or None)
+    """
+    if value is None:
+        return "o200k_base"
+
     try:
         enc = tiktoken.encoding_for_model(value)
         return enc.name
-    except:
+    except KeyError:
+        # Not a known model name, try as encoding name
         try:
             tiktoken.get_encoding(value)
             return value
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Unknown model/encoding '{value}', falling back to o200k_base: {e}")
             return "o200k_base"
 
 
@@ -46,7 +59,8 @@ class TokenCalculator:
             return sum(
                 TokenCalculator._calculate_embed_item(i, tokenizer=tokenizer) for i in inputs
             )
-        except Exception:
+        except Exception as e:
+            logger.error(f"Failed to calculate embed tokens: {e}", exc_info=True)
             return 0
 
     @staticmethod
@@ -75,7 +89,10 @@ class TokenCalculator:
                     return len(a), decoder(a)
                 return tokenizer(s_)
             return len(tokenizer(s_))
-        except Exception:
+        except Exception as e:
+            logger.error(
+                f"Tokenization failed for input (len={len(s_) if s_ else 0}): {e}", exc_info=True
+            )
             return 0
 
     @staticmethod
@@ -86,7 +103,9 @@ class TokenCalculator:
 
             if isinstance(i_, dict):
                 if "text" in i_:
-                    return TokenCalculator._calculate_chatitem(str(i_["text"]))
+                    return TokenCalculator._calculate_chatitem(
+                        str(i_["text"]), tokenizer, model_name
+                    )
                 elif "image_url" in i_:
                     return 500  # fixed cost for image URL
 
@@ -94,7 +113,11 @@ class TokenCalculator:
                 return sum(
                     TokenCalculator._calculate_chatitem(x, tokenizer, model_name) for x in i_
                 )
-        except Exception:
+        except Exception as e:
+            logger.error(
+                f"Failed to calculate chat item tokens (type={type(i_).__name__}): {e}",
+                exc_info=True,
+            )
             return 0
 
     @staticmethod
@@ -105,5 +128,9 @@ class TokenCalculator:
 
             if isinstance(s_, list):
                 return sum(TokenCalculator._calculate_embed_item(x, tokenizer) for x in s_)
-        except Exception:
+        except Exception as e:
+            logger.error(
+                f"Failed to calculate embed item tokens (type={type(s_).__name__}): {e}",
+                exc_info=True,
+            )
             return 0

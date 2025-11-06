@@ -235,7 +235,11 @@ class TestRetryWithBackoff:
             return "success"
 
         result = await retry_with_backoff(
-            eventually_succeeds, max_retries=3, initial_delay=0.01, jitter=False
+            eventually_succeeds,
+            max_retries=3,
+            initial_delay=0.01,
+            jitter=False,
+            retry_on=(Exception,),  # Test with broad exception catching
         )
         assert result == "success"
         assert call_count == 3
@@ -264,7 +268,12 @@ class TestRetryWithBackoff:
             return "done"
 
         await retry_with_backoff(
-            track_timing, max_retries=3, initial_delay=0.01, exponential_base=2.0, jitter=False
+            track_timing,
+            max_retries=3,
+            initial_delay=0.01,
+            exponential_base=2.0,
+            jitter=False,
+            retry_on=(Exception,),  # Test with broad exception catching
         )
 
         # Check delays are increasing (roughly exponential)
@@ -291,7 +300,13 @@ class TestRetryWithBackoff:
                     raise ValueError("Retry")
                 return "done"
 
-            await retry_with_backoff(track_timing, max_retries=2, initial_delay=0.1, jitter=True)
+            await retry_with_backoff(
+                track_timing,
+                max_retries=2,
+                initial_delay=0.1,
+                jitter=True,
+                retry_on=(Exception,),  # Test with broad exception catching
+            )
             if len(call_times) >= 2:
                 delays.append(call_times[1] - call_times[0])
 
@@ -336,6 +351,7 @@ class TestRetryWithBackoff:
             exponential_base=10.0,
             max_delay=0.1,
             jitter=False,
+            retry_on=(Exception,),  # Test with broad exception catching
         )
 
         # All delays should be capped at max_delay (0.1s)
@@ -639,16 +655,18 @@ class TestRetryConfigCoveragePush:
     @pytest.mark.asyncio
     async def test_retry_defaults(self):
         """Test retry_with_backoff uses defaults when not specified."""
+        from lionherd_core.errors import ConnectionError as LionConnectionError
+
         call_count = 0
 
         async def eventually_succeeds():
             nonlocal call_count
             call_count += 1
             if call_count < 2:
-                raise ValueError("Not yet")
+                raise LionConnectionError("Not yet")
             return "success"
 
-        # Call with minimal parameters (uses defaults)
+        # Call with minimal parameters (uses defaults - retries ConnectionError)
         result = await retry_with_backoff(eventually_succeeds)
 
         assert result == "success"

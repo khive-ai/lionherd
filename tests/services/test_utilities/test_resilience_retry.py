@@ -21,13 +21,17 @@ class TestRetryConfig:
 
     def test_default_values(self):
         """Test default configuration values."""
+        from lionherd_core.errors import ConnectionError
+
+        from lionherd.services.utilities.resilience import CircuitBreakerOpenError
+
         config = RetryConfig()
         assert config.max_retries == 3
         assert config.initial_delay == 1.0
         assert config.max_delay == 60.0
         assert config.exponential_base == 2.0
         assert config.jitter is True
-        assert config.retry_on == (Exception,)
+        assert config.retry_on == (ConnectionError, CircuitBreakerOpenError)
 
     def test_custom_values(self):
         """Test custom configuration values."""
