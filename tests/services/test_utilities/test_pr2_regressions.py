@@ -93,7 +93,9 @@ class TestPR2Regression:
         # Check consistency: max variance should be tiny (< 1ms)
         # Small variance is expected due to time() resolution, but should be minimal
         max_variance = max(retry_afters) - min(retry_afters)
-        assert max_variance < 0.001, f"Variance {max_variance*1000:.3f}ms too large (TOCTOU race?)"
+        assert max_variance < 0.001, (
+            f"Variance {max_variance * 1000:.3f}ms too large (TOCTOU race?)"
+        )
 
     def test_token_calculator_logs_and_raises_on_error(self, caplog):
         """CRIT-1: Verify errors are logged and raise TokenCalculationError.

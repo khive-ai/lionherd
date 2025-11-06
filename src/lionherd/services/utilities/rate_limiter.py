@@ -13,7 +13,7 @@ __all__ = ("RateLimitConfig", "TokenBucket")
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(slots=True)
 class RateLimitConfig:
     """Token bucket rate limiting configuration.
 

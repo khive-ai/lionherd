@@ -244,7 +244,7 @@ class CircuitBreaker:
             raise
 
 
-@dataclass
+@dataclass(slots=True)
 class RetryConfig:
     """Retry configuration with exponential backoff + jitter.
 

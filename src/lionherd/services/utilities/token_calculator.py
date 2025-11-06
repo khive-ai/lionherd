@@ -41,6 +41,7 @@ class TokenCalculator:
     @staticmethod
     def calculate_message_tokens(messages: list[dict], /, **kwargs) -> int:
         model = kwargs.get("model", "gpt-4o")
+        image_token_cost = kwargs.get("image_token_cost", 500)
         tokenizer = tiktoken.get_encoding(get_encoding_name(model)).encode
 
         num_tokens = 0
@@ -48,7 +49,7 @@ class TokenCalculator:
             num_tokens += 4
             _c = msg.get("content")
             num_tokens += TokenCalculator._calculate_chatitem(
-                _c, tokenizer=tokenizer, model_name=model
+                _c, tokenizer=tokenizer, model_name=model, image_token_cost=image_token_cost
             )
         return num_tokens  # buffer for chat
 
@@ -108,7 +109,9 @@ class TokenCalculator:
             raise TokenCalculationError(f"Tokenization failed: {e}") from e
 
     @staticmethod
-    def _calculate_chatitem(i_, tokenizer: Callable, model_name: str) -> int:
+    def _calculate_chatitem(
+        i_, tokenizer: Callable, model_name: str, image_token_cost: int = 500
+    ) -> int:
         try:
             if isinstance(i_, str):
                 return TokenCalculator.tokenize(i_, tokenizer=tokenizer)
@@ -116,14 +119,15 @@ class TokenCalculator:
             if isinstance(i_, dict):
                 if "text" in i_:
                     return TokenCalculator._calculate_chatitem(
-                        str(i_["text"]), tokenizer, model_name
+                        str(i_["text"]), tokenizer, model_name, image_token_cost
                     )
                 elif "image_url" in i_:
-                    return 500  # fixed cost for image URL
+                    return image_token_cost
 
             if isinstance(i_, list):
                 return sum(
-                    TokenCalculator._calculate_chatitem(x, tokenizer, model_name) for x in i_
+                    TokenCalculator._calculate_chatitem(x, tokenizer, model_name, image_token_cost)
+                    for x in i_
                 )
 
             # Unknown type - return 0 is valid (no text content)
