@@ -153,9 +153,13 @@ class CircuitBreaker:
 
         Returns:
             Tuple of (can_proceed, retry_after_seconds)
+
+        Note:
+            Uses monotonic clock (via anyio.current_time() → time.monotonic())
+            to ensure recovery_time calculations are immune to system clock changes.
         """
         async with self._lock:
-            now = current_time()
+            now = current_time()  # Monotonic time from event loop
 
             if self.state == CircuitState.OPEN:
                 # Check if recovery time has elapsed
