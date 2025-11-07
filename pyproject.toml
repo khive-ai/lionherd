@@ -1,6 +1,6 @@
 [project]
 name = "lionherd"
-version = "1.0.0-alpha"
+version = "1.0.0-alpha1"
 description = "Core utilities, base classes, and protocols for lionherd ecosystem"
 requires-python = ">=3.11"
 dependencies = [
@@ -11,6 +11,7 @@ dependencies = [
 
 [project.optional-dependencies]
 mcp = ["fastmcp>=2.13.0"]
+schema-gen = ["lionherd-core[schema-gen]"]
 
 [build-system]
 requires = ["hatchling"]
