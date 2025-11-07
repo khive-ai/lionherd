@@ -35,7 +35,8 @@ class TestCreateOpenAIConfig:
 
     def test_create_openai_config_custom_values(self):
         """Test factory with custom values."""
-        config = create_openai_config(name="test-openai",
+        config = create_openai_config(
+            name="test-openai",
             api_key="custom_key",
             base_url="https://custom.api.com",
             endpoint="custom/endpoint",
@@ -62,7 +63,8 @@ class TestCreateOpenAIConfig:
 
     def test_create_openai_config_extra_kwargs(self):
         """Test factory passes extra kwargs to config."""
-        config = create_openai_config(name="test-openai",
+        config = create_openai_config(
+            name="test-openai",
             custom_field="custom_value",
             another_field=123,
         )
@@ -294,9 +296,7 @@ class TestOpenAIChatEndpointNormalizeResponse:
     def test_normalize_response_empty_content(self):
         """Test normalize_response with empty content."""
         endpoint = OpenAIChatEndpoint(config=None, name="test-openai")
-        response = {
-            "choices": [{"index": 0, "message": {"role": "assistant", "content": None}}]
-        }
+        response = {"choices": [{"index": 0, "message": {"role": "assistant", "content": None}}]}
 
         normalized = endpoint.normalize_response(response)
 
@@ -428,9 +428,7 @@ class TestOpenAIChatEndpointIntegration:
         mock_response.json.return_value = {
             "id": "chatcmpl-123",
             "model": "gpt-4o-mini",
-            "choices": [
-                {"message": {"content": "Hello from GPT!"}, "finish_reason": "stop"}
-            ],
+            "choices": [{"message": {"content": "Hello from GPT!"}, "finish_reason": "stop"}],
             "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
         }
 
@@ -520,9 +518,7 @@ class TestOpenAIChatEndpointIntegration:
 
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "choices": [{"message": {"content": "Success"}}]
-        }
+        mock_response.json.return_value = {"choices": [{"message": {"content": "Success"}}]}
 
         mock_client = MagicMock()
         mock_client.request = AsyncMock(return_value=mock_response)

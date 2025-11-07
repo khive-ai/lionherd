@@ -36,7 +36,8 @@ class TestCreateAnthropicConfig:
 
     def test_create_anthropic_config_custom_values(self):
         """Test factory with custom values."""
-        config = create_anthropic_config(name="test-anthropic",
+        config = create_anthropic_config(
+            name="test-anthropic",
             api_key="custom_key",
             base_url="https://custom.api.com",
             endpoint="custom/endpoint",
@@ -65,7 +66,8 @@ class TestCreateAnthropicConfig:
 
     def test_create_anthropic_config_extra_kwargs(self):
         """Test factory passes extra kwargs to config."""
-        config = create_anthropic_config(name="test-anthropic",
+        config = create_anthropic_config(
+            name="test-anthropic",
             custom_field="custom_value",
             another_field=123,
         )
@@ -207,7 +209,9 @@ class TestAnthropicMessagesEndpointCreatePayload:
 
     def test_create_payload_api_key_header(self):
         """Test create_payload adds x-api-key header."""
-        endpoint = AnthropicMessagesEndpoint(config=None, name="test-default", api_key="test_key_123")
+        endpoint = AnthropicMessagesEndpoint(
+            config=None, name="test-default", api_key="test_key_123"
+        )
         request = {"messages": [{"role": "user", "content": "Hello"}]}
 
         _payload, headers = endpoint.create_payload(request)
