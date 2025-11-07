@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2025, HaiyangLi <quantocean.li at gmail dot com>
+# Copyright (c) 2025, HaiyangLi <quantocean.li at gmail dot com>
 # SPDX-License-Identifier: Apache-2.0
 
 """Comprehensive coverage tests for Endpoint module."""
@@ -382,7 +382,7 @@ class TestEndpoint:
         request = {"message": "test", "temperature": 0.8}
         extra_headers = {"X-Custom": "header"}
 
-        payload, headers = endpoint.create_payload(request, extra_headers=extra_headers)
+        _payload, headers = endpoint.create_payload(request, extra_headers=extra_headers)
 
         assert "X-Custom" in headers
         assert headers["X-Custom"] == "header"
@@ -400,7 +400,7 @@ class TestEndpoint:
         endpoint = Endpoint(config=config)
         request = {"message": "test"}
 
-        payload, headers = endpoint.create_payload(
+        payload, _headers = endpoint.create_payload(
             request, extra_param="extra_value", temperature=0.9
         )
 

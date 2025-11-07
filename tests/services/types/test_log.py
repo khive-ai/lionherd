@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2025, HaiyangLi <quantocean.li at gmail dot com>
+# Copyright (c) 2025, HaiyangLi <quantocean.li at gmail dot com>
 # SPDX-License-Identifier: Apache-2.0
 
 """Comprehensive tests for Log system - 100% coverage target.
@@ -490,8 +490,8 @@ async def test_data_logger_save_sync_when_loop_running_then_creates_task(mock_ad
     # Add log to buffer
     await logger.collect(LogEvent.info("Test"))
 
-    # Get current running loop
-    loop = asyncio.get_event_loop()
+    # Get current running loop to ensure it's active for test
+    asyncio.get_event_loop()
 
     # _save_sync should detect running loop and create task
     logger._save_sync()
@@ -775,7 +775,7 @@ def test_hook_logger_install_creates_and_subscribes():
 def test_file_adapter_init_creates_directory(temp_log_dir):
     """Test FilePersistenceAdapter creates persist_dir."""
     log_dir = temp_log_dir / "new_logs"
-    adapter = FilePersistenceAdapter(persist_dir=log_dir)
+    FilePersistenceAdapter(persist_dir=log_dir)
 
     assert log_dir.exists()
     assert log_dir.is_dir()
