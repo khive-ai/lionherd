@@ -60,9 +60,7 @@ class TestLoadMCPToolsSpecificTools:
         tool_names = ["tool1", "tool2"]
 
         with (
-            patch(
-                "lionherd.services.mcps.loader.create_mcp_callable"
-            ) as mock_create_callable,
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create_callable,
             patch("lionherd.services.Tool") as MockTool,
             patch("lionherd.services.iModel") as MockiModel,
         ):
@@ -94,9 +92,7 @@ class TestLoadMCPToolsSpecificTools:
         request_options = {"tool1": MockRequestModel}
 
         with (
-            patch(
-                "lionherd.services.mcps.loader.create_mcp_callable"
-            ) as mock_create_callable,
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create_callable,
             patch("lionherd.services.Tool") as MockTool,
             patch("lionherd.services.iModel") as MockiModel,
         ):
@@ -109,7 +105,7 @@ class TestLoadMCPToolsSpecificTools:
             mock_model = Mock()
             MockiModel.return_value = mock_model
 
-            result = await load_mcp_tools(
+            _result = await load_mcp_tools(
                 mock_registry, server_config, tool_names, request_options
             )
 
@@ -124,9 +120,7 @@ class TestLoadMCPToolsSpecificTools:
         tool_names = ["tool1"]
 
         with (
-            patch(
-                "lionherd.services.mcps.loader.create_mcp_callable"
-            ) as mock_create_callable,
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create_callable,
             patch("lionherd.services.Tool") as MockTool,
             patch("lionherd.services.iModel") as MockiModel,
         ):
@@ -160,9 +154,7 @@ class TestLoadMCPToolsSpecificTools:
         tool_names = ["tool1"]
 
         with (
-            patch(
-                "lionherd.services.mcps.loader.create_mcp_callable"
-            ) as mock_create_callable,
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create_callable,
             patch("lionherd.services.Tool") as MockTool,
             patch("lionherd.services.iModel") as MockiModel,
         ):
@@ -175,9 +167,7 @@ class TestLoadMCPToolsSpecificTools:
             mock_model = Mock()
             MockiModel.return_value = mock_model
 
-            result = await load_mcp_tools(
-                mock_registry, server_config, tool_names, update=True
-            )
+            result = await load_mcp_tools(mock_registry, server_config, tool_names, update=True)
 
             assert result == ["test_server_tool1"]
             mock_registry.register.assert_called_once()
@@ -188,9 +178,7 @@ class TestLoadMCPToolsSpecificTools:
         tool_names = ["tool1", "tool2"]
 
         with (
-            patch(
-                "lionherd.services.mcps.loader.create_mcp_callable"
-            ) as mock_create_callable,
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create_callable,
             patch("lionherd.services.Tool") as MockTool,
             patch("lionherd.services.iModel") as MockiModel,
             patch("lionherd.services.mcps.loader.logger") as mock_logger,
@@ -239,9 +227,7 @@ class TestLoadMCPToolsAutoDiscovery:
                 "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
                 return_value=mock_client,
             ),
-            patch(
-                "lionherd.services.mcps.loader.create_mcp_callable"
-            ) as mock_create_callable,
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create_callable,
             patch("lionherd.services.Tool") as MockTool,
             patch("lionherd.services.iModel") as MockiModel,
         ):
@@ -287,9 +273,7 @@ class TestLoadMCPToolsAutoDiscovery:
                 "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
                 return_value=mock_client,
             ),
-            patch(
-                "lionherd.services.mcps.loader.create_mcp_callable"
-            ) as mock_create_callable,
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create_callable,
             patch("lionherd.services.Tool") as MockTool,
             patch("lionherd.services.iModel") as MockiModel,
         ):
@@ -302,7 +286,7 @@ class TestLoadMCPToolsAutoDiscovery:
             mock_model = Mock()
             MockiModel.return_value = mock_model
 
-            result = await load_mcp_tools(
+            _result = await load_mcp_tools(
                 mock_registry, server_config, request_options=request_options
             )
 
@@ -328,9 +312,7 @@ class TestLoadMCPToolsAutoDiscovery:
                 "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
                 return_value=mock_client,
             ),
-            patch(
-                "lionherd.services.mcps.loader.create_mcp_callable"
-            ) as mock_create_callable,
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create_callable,
             patch("lionherd.services.Tool") as MockTool,
             patch("lionherd.services.iModel") as MockiModel,
             patch("lionherd.services.mcps.loader.logger") as mock_logger,
@@ -367,9 +349,7 @@ class TestLoadMCPToolsAutoDiscovery:
                 "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
                 return_value=mock_client,
             ),
-            patch(
-                "lionherd.services.mcps.loader.create_mcp_callable"
-            ) as mock_create_callable,
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create_callable,
             patch("lionherd.services.Tool") as MockTool,
             patch("lionherd.services.iModel") as MockiModel,
         ):
@@ -407,9 +387,7 @@ class TestLoadMCPToolsAutoDiscovery:
                 "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
                 return_value=mock_client,
             ),
-            patch(
-                "lionherd.services.mcps.loader.create_mcp_callable"
-            ) as mock_create_callable,
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create_callable,
             patch("lionherd.services.Tool") as MockTool,
             patch("lionherd.services.iModel") as MockiModel,
         ):
@@ -475,9 +453,7 @@ class TestLoadMCPToolsAutoDiscovery:
                 "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
                 return_value=mock_client,
             ),
-            patch(
-                "lionherd.services.mcps.loader.create_mcp_callable"
-            ) as mock_create_callable,
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create_callable,
             patch("lionherd.services.Tool") as MockTool,
             patch("lionherd.services.iModel") as MockiModel,
             patch("lionherd.services.mcps.loader.logger") as mock_logger,
@@ -774,7 +750,7 @@ class TestLoadMCPConfig:
             "lionherd.services.mcps.loader.load_mcp_tools",
             return_value=["tool1"],
         ) as mock_load_tools:
-            result = await load_mcp_config(mock_registry, str(config_file), update=True)
+            _result = await load_mcp_config(mock_registry, str(config_file), update=True)
 
             # Verify update=True was passed
             mock_load_tools.assert_called_once()
