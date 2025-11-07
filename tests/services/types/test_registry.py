@@ -21,7 +21,6 @@ import pytest
 from lionherd.services import Calling, ServiceBackend, ServiceRegistry, iModel
 from lionherd.services.mcps.loader import create_mcp_callable
 
-
 # =============================================================================
 # Mock Components
 # =============================================================================
@@ -395,14 +394,16 @@ class TestRegistryMCPIntegration:
         server_config = {"server": "server"}
         tool_names = ["tool1", "tool2"]
 
-        with patch("lionherd.services.mcps.loader.create_mcp_callable"):
-            with patch("lionherd.services.types.tool.Tool", side_effect=Exception("Tool error")):
-                # Should not raise, but skip failed tools
-                registered = await registry.register_mcp_server(
-                    server_config=server_config, tool_names=tool_names
-                )
+        with (
+            patch("lionherd.services.mcps.loader.create_mcp_callable"),
+            patch("lionherd.services.types.tool.Tool", side_effect=Exception("Tool error")),
+        ):
+            # Should not raise, but skip failed tools
+            registered = await registry.register_mcp_server(
+                server_config=server_config, tool_names=tool_names
+            )
 
-                assert len(registered) == 0
+            assert len(registered) == 0
 
     async def test_register_mcp_server_auto_discover(self):
         """Test register_mcp_server auto-discovers tools when tool_names=None."""
@@ -422,22 +423,24 @@ class TestRegistryMCPIntegration:
 
         server_config = {"command": "test", "args": []}
 
-        with patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client):
-            with patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create:
-                mock_callable = AsyncMock(return_value="mock_result")
-                mock_create.return_value = mock_callable
+        with (
+            patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client),
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create,
+            patch("lionherd.services.types.tool.Tool") as MockTool,
+            patch("lionherd_core.schema_handlers.typescript_schema"),
+        ):
+            mock_callable = AsyncMock(return_value="mock_result")
+            mock_create.return_value = mock_callable
 
-                with patch("lionherd.services.types.tool.Tool") as MockTool:
-                    with patch("lionherd_core.schema_handlers.typescript_schema"):
-                        mock_tool_instance = Mock()
-                        MockTool.return_value = mock_tool_instance
+            mock_tool_instance = Mock()
+            MockTool.return_value = mock_tool_instance
 
-                        registered = await registry.register_mcp_server(
-                            server_config=server_config, tool_names=None
-                        )
+            registered = await registry.register_mcp_server(
+                server_config=server_config, tool_names=None
+            )
 
-                        # Should have discovered and registered both tools
-                        assert len(registered) == 2
+            # Should have discovered and registered both tools
+            assert len(registered) == 2
 
     async def test_register_mcp_server_auto_discover_duplicate_skips(self):
         """Test auto-discover skips duplicates when update=False."""
@@ -456,15 +459,17 @@ class TestRegistryMCPIntegration:
 
         server_config = {"command": "test", "args": []}
 
-        with patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client):
-            with patch("lionherd.services.mcps.loader.create_mcp_callable"):
-                with patch("lionherd.services.types.tool.Tool"):
-                    registered = await registry.register_mcp_server(
-                        server_config=server_config, tool_names=None, update=False
-                    )
+        with (
+            patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client),
+            patch("lionherd.services.mcps.loader.create_mcp_callable"),
+            patch("lionherd.services.types.tool.Tool"),
+        ):
+            registered = await registry.register_mcp_server(
+                server_config=server_config, tool_names=None, update=False
+            )
 
-                    # Should skip the duplicate
-                    assert len(registered) == 0
+            # Should skip the duplicate
+            assert len(registered) == 0
 
     async def test_register_mcp_server_schema_extraction_fails(self):
         """Test schema extraction failure is handled gracefully."""
@@ -479,26 +484,27 @@ class TestRegistryMCPIntegration:
 
         server_config = {"command": "test", "args": []}
 
-        with patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client):
-            with patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create:
-                mock_callable = AsyncMock()
-                mock_create.return_value = mock_callable
+        with (
+            patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client),
+            patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create,
+            patch("lionherd.services.types.tool.Tool") as MockTool,
+            patch(
+                "lionherd_core.schema_handlers.typescript_schema",
+                side_effect=Exception("Schema error"),
+            ),
+        ):
+            mock_callable = AsyncMock()
+            mock_create.return_value = mock_callable
 
-                with patch("lionherd.services.types.tool.Tool") as MockTool:
-                    # Make schema_handlers raise
-                    with patch(
-                        "lionherd_core.schema_handlers.typescript_schema",
-                        side_effect=Exception("Schema error"),
-                    ):
-                        mock_tool_instance = Mock()
-                        MockTool.return_value = mock_tool_instance
+            mock_tool_instance = Mock()
+            MockTool.return_value = mock_tool_instance
 
-                        registered = await registry.register_mcp_server(
-                            server_config=server_config, tool_names=None
-                        )
+            registered = await registry.register_mcp_server(
+                server_config=server_config, tool_names=None
+            )
 
-                        # Should still register despite schema error
-                        assert len(registered) == 1
+            # Should still register despite schema error
+            assert len(registered) == 1
 
     async def test_create_mcp_callable_wrapper(self):
         """Test create_mcp_callable creates functional wrapper."""
@@ -560,17 +566,17 @@ class TestRegistryMCPIntegration:
         mock_pool = Mock()
         mock_pool._configs = {"server1": {}, "server2": {}}
 
-        with patch("lionherd.services.mcps.MCPConnectionPool.load_config"):
-            with patch("lionherd.services.mcps.MCPConnectionPool._configs", mock_pool._configs):
-                with patch.object(
-                    registry, "register_mcp_server", return_value=["tool1", "tool2"]
-                ) as mock_register:
-                    result = await registry.load_mcp_config("/path/to/.mcp.json")
+        with (
+            patch("lionherd.services.mcps.MCPConnectionPool.load_config"),
+            patch("lionherd.services.mcps.MCPConnectionPool._configs", mock_pool._configs),
+            patch.object(registry, "register_mcp_server", return_value=["tool1", "tool2"]),
+        ):
+            result = await registry.load_mcp_config("/path/to/.mcp.json")
 
-                    assert "server1" in result
-                    assert "server2" in result
-                    assert result["server1"] == ["tool1", "tool2"]
-                    assert result["server2"] == ["tool1", "tool2"]
+            assert "server1" in result
+            assert "server2" in result
+            assert result["server1"] == ["tool1", "tool2"]
+            assert result["server2"] == ["tool1", "tool2"]
 
     async def test_load_mcp_config_specific_servers(self):
         """Test load_mcp_config with specific server_names."""
@@ -579,18 +585,18 @@ class TestRegistryMCPIntegration:
         mock_pool = Mock()
         mock_pool._configs = {"server1": {}, "server2": {}, "server3": {}}
 
-        with patch("lionherd.services.mcps.MCPConnectionPool.load_config"):
-            with patch("lionherd.services.mcps.MCPConnectionPool._configs", mock_pool._configs):
-                with patch.object(
-                    registry, "register_mcp_server", return_value=["tool1"]
-                ) as mock_register:
-                    result = await registry.load_mcp_config(
-                        "/path/to/.mcp.json", server_names=["server1", "server3"]
-                    )
+        with (
+            patch("lionherd.services.mcps.MCPConnectionPool.load_config"),
+            patch("lionherd.services.mcps.MCPConnectionPool._configs", mock_pool._configs),
+            patch.object(registry, "register_mcp_server", return_value=["tool1"]),
+        ):
+            result = await registry.load_mcp_config(
+                "/path/to/.mcp.json", server_names=["server1", "server3"]
+            )
 
-                    assert "server1" in result
-                    assert "server3" in result
-                    assert "server2" not in result
+            assert "server1" in result
+            assert "server3" in result
+            assert "server2" not in result
 
     async def test_load_mcp_config_server_failure(self):
         """Test load_mcp_config handles server registration failure."""
@@ -599,17 +605,18 @@ class TestRegistryMCPIntegration:
         mock_pool = Mock()
         mock_pool._configs = {"server1": {}, "server2": {}}
 
-        with patch("lionherd.services.mcps.MCPConnectionPool.load_config"):
-            with patch("lionherd.services.mcps.MCPConnectionPool._configs", mock_pool._configs):
+        async def mock_register(server_config, update=False):
+            if server_config["server"] == "server1":
+                return ["tool1"]
+            else:
+                raise Exception("Server2 failed")
 
-                async def mock_register(server_config, update):
-                    if server_config["server"] == "server1":
-                        return ["tool1"]
-                    else:
-                        raise Exception("Server2 failed")
+        with (
+            patch("lionherd.services.mcps.MCPConnectionPool.load_config"),
+            patch("lionherd.services.mcps.MCPConnectionPool._configs", mock_pool._configs),
+            patch.object(registry, "register_mcp_server", side_effect=mock_register),
+        ):
+            result = await registry.load_mcp_config("/path/to/.mcp.json")
 
-                with patch.object(registry, "register_mcp_server", side_effect=mock_register):
-                    result = await registry.load_mcp_config("/path/to/.mcp.json")
-
-                    assert result["server1"] == ["tool1"]
-                    assert result["server2"] == []  # Failed, empty list
+            assert result["server1"] == ["tool1"]
+            assert result["server2"] == []  # Failed, empty list
