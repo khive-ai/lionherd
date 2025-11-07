@@ -349,12 +349,19 @@ class HookLogger:
                 case _:
                     level = LogLevel.DEBUG
 
+        # Handle hook_phase as either enum or string (from serialization)
+        hook_phase_value = (
+            hook_event.hook_phase.value
+            if hasattr(hook_event.hook_phase, "value")
+            else hook_event.hook_phase
+        )
+
         log_event = LogEvent(
             level=level,
-            message=f"Hook {hook_event.hook_phase.value}",
+            message=f"Hook {hook_phase_value}",
             context={
-                "hook_phase": hook_event.hook_phase.value,
-                "event_id": str(hook_event.ln_id),
+                "hook_phase": hook_phase_value,
+                "event_id": str(hook_event.id),
                 "status": hook_event.execution.status.value,
                 "duration": hook_event.execution.duration,
             },

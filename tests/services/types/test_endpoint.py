@@ -14,6 +14,7 @@ import httpx
 import pytest
 from pydantic import BaseModel, SecretStr
 
+from lionherd_core.errors import ConnectionError
 from lionherd.services.types.endpoint import APICalling, Endpoint, EndpointConfig
 from lionherd.services.utilities.resilience import CircuitBreaker, RetryConfig
 
@@ -549,7 +550,7 @@ class TestEndpoint:
             nonlocal call_count
             call_count += 1
             if call_count < 2:
-                raise ValueError("Retry error")
+                raise ConnectionError("Retry error")
             return {"result": "success"}
 
         endpoint._call = mock_call

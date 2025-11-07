@@ -21,7 +21,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from lionherd_core import Element, EventStatus, Pile
+from lionherd_core import Element, Event, EventStatus, Pile
 
 from lionherd.adapters.log_adapters import FilePersistenceAdapter, PersistenceAdapter
 from lionherd.services.types.log import (
@@ -44,6 +44,17 @@ class MockElement(Element):
 
     value: str = "test"
     number: int = 42
+
+
+class MockEvent(Event):
+    """Mock Event for testing HookLogger and Log.create()."""
+
+    value: str = "test"
+    number: int = 42
+
+    async def _invoke(self) -> None:
+        """Minimal _invoke implementation (required by Event ABC)."""
+        pass
 
 
 class MockPersistenceAdapter(PersistenceAdapter):
@@ -561,7 +572,7 @@ async def test_hook_logger_log_hook_when_failed_status_then_error_level(mock_ada
     hook_event = HookEvent(
         registry=registry,
         hook_phase=HookPhase.PreEventCreate,
-        event_like=MockElement,
+        event_like=MockEvent,
     )
 
     # Set status to FAILED
@@ -585,7 +596,7 @@ async def test_hook_logger_log_hook_when_cancelled_status_then_warning_level(moc
     hook_event = HookEvent(
         registry=registry,
         hook_phase=HookPhase.PreInvocation,
-        event_like=MockElement(),
+        event_like=MockEvent(),
     )
 
     hook_event.execution.status = EventStatus.CANCELLED
@@ -607,7 +618,7 @@ async def test_hook_logger_log_hook_when_aborted_status_then_warning_level(mock_
     hook_event = HookEvent(
         registry=registry,
         hook_phase=HookPhase.PostInvocation,
-        event_like=MockElement(),
+        event_like=MockEvent(),
     )
 
     hook_event.execution.status = EventStatus.ABORTED
@@ -629,7 +640,7 @@ async def test_hook_logger_log_hook_when_completed_status_then_info_level(mock_a
     hook_event = HookEvent(
         registry=registry,
         hook_phase=HookPhase.PreEventCreate,
-        event_like=MockElement,
+        event_like=MockEvent,
     )
 
     hook_event.execution.status = EventStatus.COMPLETED
@@ -654,7 +665,7 @@ async def test_hook_logger_log_hook_when_skipped_status_then_info_level(mock_ada
     hook_event = HookEvent(
         registry=registry,
         hook_phase=HookPhase.PreEventCreate,
-        event_like=MockElement,
+        event_like=MockEvent,
     )
 
     hook_event.execution.status = EventStatus.SKIPPED
@@ -677,7 +688,7 @@ async def test_hook_logger_log_hook_when_pending_status_then_debug_level(mock_ad
     hook_event = HookEvent(
         registry=registry,
         hook_phase=HookPhase.PreEventCreate,
-        event_like=MockElement,
+        event_like=MockEvent,
     )
 
     hook_event.execution.status = EventStatus.PENDING
@@ -700,7 +711,7 @@ async def test_hook_logger_log_hook_when_processing_status_then_debug_level(mock
     hook_event = HookEvent(
         registry=registry,
         hook_phase=HookPhase.PreEventCreate,
-        event_like=MockElement,
+        event_like=MockEvent,
     )
 
     hook_event.execution.status = EventStatus.PROCESSING
@@ -723,7 +734,7 @@ async def test_hook_logger_log_hook_when_explicit_level_then_uses(mock_adapter):
     hook_event = HookEvent(
         registry=registry,
         hook_phase=HookPhase.PreEventCreate,
-        event_like=MockElement,
+        event_like=MockEvent,
     )
 
     # Override with explicit level

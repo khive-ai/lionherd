@@ -88,12 +88,22 @@ class MockEndpoint(Endpoint):
         """Mock create_payload."""
         return ({"data": "payload"}, {"Authorization": "Bearer mock"})
 
+    async def call(self, request: dict, **kwargs):
+        """Override call() to return mock response instead of making real HTTP request."""
+        return {"result": "mock_response"}
 
-class MockTokenBucket:
+
+class MockTokenBucket(TokenBucket):
     """Mock TokenBucket for rate limiting tests."""
 
     def __init__(self, should_timeout: bool = False):
+        # Skip parent __init__ to avoid real initialization
         self.should_timeout = should_timeout
+        # Set required parent attributes manually
+        self.capacity = 100
+        self.tokens = 100
+        self.rate = 10
+        self._lock = None  # Won't be used in tests
 
     async def acquire(self, timeout: float) -> bool:
         """Mock acquire - returns False if should_timeout."""
@@ -154,16 +164,12 @@ class TestiModelCreateCalling:
         backend = MockBackend(config={"provider": "test", "name": "tool_service"})
         model = iModel(backend=backend)
 
-        # Mock the calling constructor to accept request parameter
-        with patch.object(MockCalling, "__init__", return_value=None) as mock_init:
-            mock_calling = MockCalling(backend=backend)
-            mock_calling.backend = backend
+        # Create real calling instance - no patching needed
+        calling = await model.create_calling(param1="value1", param2="value2")
 
-            with patch.object(backend, "event_type", return_value=lambda **kw: mock_calling):
-                calling = await model.create_calling(param1="value1", param2="value2")
-
-                # Verify calling was created (implementation may vary)
-                assert calling.backend is backend
+        # Verify calling was created correctly
+        assert calling.backend is backend
+        assert calling.metadata["arguments"] == {"param1": "value1", "param2": "value2"}
 
     async def test_create_calling_with_hooks_attached(self):
         """Test hook attachment when hook_registry configured."""
@@ -198,10 +204,10 @@ class TestiModelCreateCalling:
         backend = MockBackend(config={"provider": "test", "name": "service"})
         model = iModel(backend=backend, hook_registry=None)
 
-        calling = MockCalling(backend=backend)
-        with patch.object(backend, "event_type", return_value=lambda **kw: calling):
-            result = await model.create_calling(data="test")
-            assert result is calling
+        # Create calling without hooks
+        result = await model.create_calling(data="test")
+        assert result.backend is backend
+        assert isinstance(result, MockCalling)
 
 
 # =============================================================================
