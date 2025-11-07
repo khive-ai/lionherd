@@ -615,12 +615,14 @@ class TestEndpoint:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=None)
 
-        with patch.object(endpoint, "_create_http_client", return_value=mock_client):
-            with pytest.raises(httpx.HTTPStatusError):
-                await endpoint._call_http(
-                    payload={"message": "test", "temperature": 0.7},
-                    headers={"Authorization": "Bearer test"},
-                )
+        with (
+            patch.object(endpoint, "_create_http_client", return_value=mock_client),
+            pytest.raises(httpx.HTTPStatusError),
+        ):
+            await endpoint._call_http(
+                payload={"message": "test", "temperature": 0.7},
+                headers={"Authorization": "Bearer test"},
+            )
 
     @pytest.mark.asyncio
     async def test_call_http_500_raises(self):
@@ -646,12 +648,14 @@ class TestEndpoint:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=None)
 
-        with patch.object(endpoint, "_create_http_client", return_value=mock_client):
-            with pytest.raises(httpx.HTTPStatusError):
-                await endpoint._call_http(
-                    payload={"message": "test", "temperature": 0.7},
-                    headers={"Authorization": "Bearer test"},
-                )
+        with (
+            patch.object(endpoint, "_create_http_client", return_value=mock_client),
+            pytest.raises(httpx.HTTPStatusError),
+        ):
+            await endpoint._call_http(
+                payload={"message": "test", "temperature": 0.7},
+                headers={"Authorization": "Bearer test"},
+            )
 
     @pytest.mark.asyncio
     async def test_call_http_non_200_with_json_error(self):
@@ -676,12 +680,14 @@ class TestEndpoint:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=None)
 
-        with patch.object(endpoint, "_create_http_client", return_value=mock_client):
-            with pytest.raises(httpx.HTTPStatusError, match="400"):
-                await endpoint._call_http(
-                    payload={"message": "test", "temperature": 0.7},
-                    headers={"Authorization": "Bearer test"},
-                )
+        with (
+            patch.object(endpoint, "_create_http_client", return_value=mock_client),
+            pytest.raises(httpx.HTTPStatusError, match="400"),
+        ):
+            await endpoint._call_http(
+                payload={"message": "test", "temperature": 0.7},
+                headers={"Authorization": "Bearer test"},
+            )
 
     @pytest.mark.asyncio
     async def test_call_http_non_200_without_json_error(self):
@@ -706,12 +712,14 @@ class TestEndpoint:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=None)
 
-        with patch.object(endpoint, "_create_http_client", return_value=mock_client):
-            with pytest.raises(httpx.HTTPStatusError, match="403"):
-                await endpoint._call_http(
-                    payload={"message": "test", "temperature": 0.7},
-                    headers={"Authorization": "Bearer test"},
-                )
+        with (
+            patch.object(endpoint, "_create_http_client", return_value=mock_client),
+            pytest.raises(httpx.HTTPStatusError, match="403"),
+        ):
+            await endpoint._call_http(
+                payload={"message": "test", "temperature": 0.7},
+                headers={"Authorization": "Bearer test"},
+            )
 
     @pytest.mark.asyncio
     async def test_stream(self):
@@ -806,13 +814,15 @@ class TestEndpoint:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=None)
 
-        with patch.object(endpoint, "_create_http_client", return_value=mock_client):
-            with pytest.raises(httpx.HTTPStatusError, match="500"):
-                async for _ in endpoint._stream_http(
-                    payload={"message": "test", "temperature": 0.7},
-                    headers={"Authorization": "Bearer test"},
-                ):
-                    pass
+        with (
+            patch.object(endpoint, "_create_http_client", return_value=mock_client),
+            pytest.raises(httpx.HTTPStatusError, match="500"),
+        ):
+            async for _ in endpoint._stream_http(
+                payload={"message": "test", "temperature": 0.7},
+                headers={"Authorization": "Bearer test"},
+            ):
+                pass
 
     def test_to_dict_with_retry_config(self):
         """Test to_dict with retry_config."""

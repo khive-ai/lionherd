@@ -41,8 +41,10 @@ from .utilities import (
 )
 
 __all__ = (
-    # Types
     "Calling",
+    "CircuitBreaker",
+    "CircuitBreakerOpenError",
+    "CircuitState",
     "DataLogger",
     "Endpoint",
     "EndpointConfig",
@@ -58,21 +60,17 @@ __all__ = (
     "LogLevel",
     "NormalizedResponse",
     "PersistenceAdapter",
+    "RateLimitConfig",
+    "RetryConfig",
     "ServiceBackend",
     "ServiceConfig",
+    "TokenBucket",
+    "TokenCalculationError",
+    "TokenCalculator",
     "Tool",
     "ToolCalling",
     "ToolConfig",
     "iModel",
     "normalize_response",
-    # Utilities
-    "CircuitBreaker",
-    "CircuitBreakerOpenError",
-    "CircuitState",
-    "RateLimitConfig",
-    "RetryConfig",
-    "TokenBucket",
-    "TokenCalculationError",
-    "TokenCalculator",
     "retry_with_backoff",
 )
