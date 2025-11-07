@@ -26,7 +26,6 @@ from lionherd.services.types.backend import (
 )
 from lionherd.services.types.hook import HookEvent, HookPhase, HookRegistry
 
-
 # =============================================================================
 # Test Fixtures
 # =============================================================================
@@ -569,9 +568,7 @@ class TestServiceConfig:
         class TestOptions(BaseModel):
             timeout: int = 30
 
-        config = ServiceConfig(
-            provider="test", name="test_service", request_options=TestOptions
-        )
+        config = ServiceConfig(provider="test", name="test_service", request_options=TestOptions)
 
         assert config.request_options == TestOptions
 
@@ -600,6 +597,7 @@ class TestServiceBackend:
 
     def test_version_property_from_config(self):
         """Test version property when config has version attribute."""
+
         # Create a config class that supports version
         class VersionedConfig(ServiceConfig):
             version: str | None = None
@@ -619,6 +617,7 @@ class TestServiceBackend:
 
     def test_version_setter_to_config(self):
         """Test version setter when config has version attribute."""
+
         # Create a config class that supports version
         class VersionedConfig(ServiceConfig):
             version: str | None = None
@@ -642,6 +641,7 @@ class TestServiceBackend:
 
     def test_tags_property_from_config_list(self):
         """Test tags property when config has tags as list."""
+
         # Create a config class that supports tags
         class TaggedConfig(ServiceConfig):
             tags: list[str] | None = None
@@ -653,6 +653,7 @@ class TestServiceBackend:
 
     def test_tags_property_from_config_tuple(self):
         """Test tags property when config has tags as tuple."""
+
         # Create a config class that supports tags
         class TaggedConfig(ServiceConfig):
             tags: tuple[str, ...] | None = None
@@ -664,6 +665,7 @@ class TestServiceBackend:
 
     def test_tags_property_from_config_set(self):
         """Test tags property when config has tags as set."""
+
         # Create a config class that supports tags
         class TaggedConfig(ServiceConfig):
             tags: set[str] | None = None
@@ -675,6 +677,7 @@ class TestServiceBackend:
 
     def test_tags_property_from_config_none(self):
         """Test tags property when config.tags is None."""
+
         # Create a config class that supports tags
         class TaggedConfig(ServiceConfig):
             tags: list[str] | None = None
@@ -709,6 +712,7 @@ class TestServiceBackend:
 
     def test_tags_setter_to_config_from_list(self):
         """Test tags setter when config has tags attribute (from list)."""
+
         # Create a config class that supports tags
         class TaggedConfig(ServiceConfig):
             tags: list[str] | None = None
@@ -722,6 +726,7 @@ class TestServiceBackend:
 
     def test_tags_setter_to_config_from_set(self):
         """Test tags setter when config has tags attribute (from set)."""
+
         # Create a config class that supports tags
         class TaggedConfig(ServiceConfig):
             tags: list[str] | None = None
@@ -749,9 +754,7 @@ class TestServiceBackend:
         class TestOptions(BaseModel):
             timeout: int = 30
 
-        config = ServiceConfig(
-            provider="test", name="test", request_options=TestOptions
-        )
+        config = ServiceConfig(provider="test", name="test", request_options=TestOptions)
         backend = MockServiceBackend(config=config)
 
         assert backend.request_options == TestOptions
@@ -783,7 +786,5 @@ class TestServiceBackend:
         config = ServiceConfig(provider="test", name="test")
         backend = MockServiceBackend(config=config)
 
-        with pytest.raises(
-            NotImplementedError, match="does not support streaming calls"
-        ):
+        with pytest.raises(NotImplementedError, match="does not support streaming calls"):
             await backend.stream()

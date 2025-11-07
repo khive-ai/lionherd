@@ -27,7 +27,6 @@ from lionherd.services.types.hook import (
     validate_stream_handlers,
 )
 
-
 # =============================================================================
 # Test Fixtures & Helpers
 # =============================================================================
@@ -303,9 +302,7 @@ async def test_registry_pre_event_create_when_hook_returns_event_then_success():
 
     registry = HookRegistry(hooks={HookPhase.PreEventCreate: hook})
 
-    result, should_exit, status = await registry.pre_event_create(
-        MockEvent, test_param="value"
-    )
+    result, should_exit, status = await registry.pre_event_create(MockEvent, test_param="value")
 
     assert isinstance(result, MockEvent)
     assert result.test_value == "from_hook"
@@ -462,9 +459,7 @@ async def test_registry_handle_streaming_chunk_when_success():
 
     registry = HookRegistry(stream_handlers={"text": handler})
 
-    result, should_exit, status = await registry.handle_streaming_chunk(
-        "text", "chunk_data"
-    )
+    result, should_exit, status = await registry.handle_streaming_chunk("text", "chunk_data")
 
     assert result == "processed"
     assert should_exit is False
@@ -482,9 +477,7 @@ async def test_registry_handle_streaming_chunk_when_raises_then_aborted():
 
     registry = HookRegistry(stream_handlers={"text": handler})
 
-    result, should_exit, status = await registry.handle_streaming_chunk(
-        "text", "data", exit=True
-    )
+    result, should_exit, status = await registry.handle_streaming_chunk("text", "data", exit=True)
 
     assert isinstance(result, RuntimeError)
     assert should_exit is True
@@ -514,9 +507,7 @@ async def test_registry_call_when_pre_event_create_then_delegates():
 
     registry = HookRegistry(hooks={HookPhase.PreEventCreate: hook})
 
-    (result_tuple, meta) = await registry.call(
-        MockEvent, hook_phase=HookPhase.PreEventCreate
-    )
+    (result_tuple, meta) = await registry.call(MockEvent, hook_phase=HookPhase.PreEventCreate)
 
     result, should_exit, status = result_tuple
     assert status == EventStatus.COMPLETED
@@ -551,9 +542,7 @@ async def test_registry_call_when_post_invocation_then_delegates():
 
     registry = HookRegistry(hooks={HookPhase.PostInvocation: hook})
 
-    (result_tuple, meta) = await registry.call(
-        event, hook_phase=HookPhase.PostInvocation
-    )
+    (result_tuple, meta) = await registry.call(event, hook_phase=HookPhase.PostInvocation)
 
     result, should_exit, status = result_tuple
     assert status == EventStatus.COMPLETED
@@ -569,9 +558,7 @@ async def test_registry_call_when_chunk_type_then_delegates():
 
     registry = HookRegistry(stream_handlers={"text": handler})
 
-    result_tuple = await registry.call(
-        None, hook_phase=None, chunk_type="text", chunk="data"
-    )
+    result_tuple = await registry.call(None, hook_phase=None, chunk_type="text", chunk="data")
 
     # Note: call() with chunk_type returns different structure
     result, should_exit, status = result_tuple
@@ -589,9 +576,7 @@ async def test_registry_call_when_phase_value_string_then_matches():
     registry = HookRegistry(hooks={HookPhase.PreInvocation: hook})
 
     # Pass string value instead of enum
-    (result_tuple, meta) = await registry.call(
-        event, hook_phase=HookPhase.PreInvocation.value
-    )
+    (result_tuple, meta) = await registry.call(event, hook_phase=HookPhase.PreInvocation.value)
 
     result, should_exit, status = result_tuple
     assert result == "matched"

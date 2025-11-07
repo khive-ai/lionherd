@@ -6,10 +6,9 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import Any, ClassVar, TypeVar
 
-from typing_extensions import TypedDict
-
 from lionherd_core import Broadcaster, Enum, Event, EventStatus, Undefined, concurrency
 from pydantic import Field, PrivateAttr, field_validator
+from typing_extensions import TypedDict
 
 SC = TypeVar("SC")
 """Stream Chunk type variable."""
