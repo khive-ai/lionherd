@@ -298,11 +298,14 @@ class TestTokenCalculatorExceptionPaths:
 
     def test_calculate_embed_token_with_failing_tokenizer(self):
         """Test calculate_embed_token exception path when tokenization fails."""
-        from lionherd.services.utilities.token_calculator import TokenCalculationError
         from unittest.mock import patch
 
+        from lionherd.services.utilities.token_calculator import TokenCalculationError
+
         # Patch tiktoken.get_encoding to raise an exception
-        with patch("lionherd.services.utilities.token_calculator.tiktoken.get_encoding") as mock_enc:
+        with patch(
+            "lionherd.services.utilities.token_calculator.tiktoken.get_encoding"
+        ) as mock_enc:
             mock_enc.side_effect = RuntimeError("Encoding failure")
 
             with pytest.raises(TokenCalculationError, match="Embed token calculation failed"):
@@ -320,10 +323,7 @@ class TestTokenCalculatorExceptionPaths:
         encoding = tiktoken.get_encoding("o200k_base")
 
         with pytest.raises(TokenCalculationError, match="Chat item token calculation failed"):
-            TokenCalculator._calculate_chatitem(
-                {"text": BadObject()}, encoding.encode, "gpt-4o"
-            )
-
+            TokenCalculator._calculate_chatitem({"text": BadObject()}, encoding.encode, "gpt-4o")
 
     def test_calculate_chatitem_nested_list_exception(self):
         """Test _calculate_chatitem with nested list that causes exception."""
