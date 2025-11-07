@@ -30,10 +30,9 @@ from lionherd.services.types.log import (
     Log,
     LogBroadcaster,
     LogEvent,
-    LogLevel,
     LoggerConfig,
+    LogLevel,
 )
-
 
 # =============================================================================
 # Test Fixtures
@@ -545,9 +544,7 @@ def test_hook_logger_init_when_adapter_provided_then_uses(mock_adapter):
 
 def test_hook_logger_init_when_no_adapter_then_creates_file_adapter(temp_log_dir):
     """Test HookLogger.__init__ creates FilePersistenceAdapter when adapter is None."""
-    logger = HookLogger(
-        persist_dir=temp_log_dir / "hooks", file_prefix="test_hooks", capacity=25
-    )
+    logger = HookLogger(persist_dir=temp_log_dir / "hooks", file_prefix="test_hooks", capacity=25)
 
     assert isinstance(logger.data_logger.adapter, FilePersistenceAdapter)
     assert logger.data_logger.capacity == 25
@@ -744,9 +741,7 @@ def test_hook_logger_install_creates_and_subscribes():
     initial_count = len(HookBroadcaster._subscribers)
 
     # Install with custom config
-    logger = HookLogger.install(
-        persist_dir="./test_hooks", file_prefix="custom", capacity=40
-    )
+    logger = HookLogger.install(persist_dir="./test_hooks", file_prefix="custom", capacity=40)
 
     # Should have subscribed
     assert len(HookBroadcaster._subscribers) > initial_count

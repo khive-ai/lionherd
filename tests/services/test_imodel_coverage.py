@@ -25,7 +25,7 @@ import pytest
 
 from lionherd.services import Calling, ServiceBackend, iModel
 from lionherd.services.types.endpoint import Endpoint
-from lionherd.services.utilities.rate_limiter import TokenBucket  # noqa: F401
+from lionherd.services.utilities.rate_limiter import TokenBucket
 
 # Rebuild iModel to resolve forward references
 iModel.model_rebuild()

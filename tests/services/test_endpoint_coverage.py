@@ -162,6 +162,7 @@ class TestEndpointConfig:
 
     def test_validate_request_options_generic_exception(self):
         """Test request_options with exception during validation."""
+
         # Create a mock that raises a non-ImportError exception
         class BadModel:
             """A class that will cause issues during validation."""
@@ -732,9 +733,7 @@ class TestEndpoint:
         endpoint._stream_http = mock_stream_http
 
         chunks = []
-        async for chunk in endpoint.stream(
-            request={"message": "test", "temperature": 0.7}
-        ):
+        async for chunk in endpoint.stream(request={"message": "test", "temperature": 0.7}):
             chunks.append(chunk)
 
         assert chunks == ["chunk1", "chunk2", "chunk3"]

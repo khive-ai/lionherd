@@ -123,6 +123,7 @@ class ToolConfig(ServiceConfig):
 
     Extends ServiceConfig with tool-specific defaults.
     """
+
     provider: str = "tool"
 
 
@@ -157,10 +158,7 @@ class Tool(ServiceBackend):
 
             # Initialize config if not present
             if "config" not in data:
-                data["config"] = ToolConfig(
-                    provider="tool",
-                    name=func.__name__
-                )
+                data["config"] = ToolConfig(provider="tool", name=func.__name__)
             elif isinstance(data["config"], dict):
                 # Convert dict to ToolConfig, set name from function if not present
                 config_dict = data["config"].copy()

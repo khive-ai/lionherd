@@ -25,7 +25,6 @@ from lionherd.services.types.tool import (
     _python_type_to_json_type,
 )
 
-
 # =============================================================================
 # Test Helpers
 # =============================================================================
@@ -247,6 +246,7 @@ def test_tool_when_non_callable_then_raises():
 
 def test_tool_when_callable_no_name_attr_then_raises():
     """Test Tool validation raises for callable without __name__."""
+
     # Create a custom callable class without __name__
     class CallableWithoutName:
         def __call__(self, x):
