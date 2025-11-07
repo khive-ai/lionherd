@@ -6,6 +6,7 @@ from __future__ import annotations
 import asyncio
 import codecs
 import contextlib
+import inspect
 import json
 import logging
 import shutil
@@ -15,13 +16,11 @@ from dataclasses import (
     field as datafield,
 )
 from datetime import UTC, datetime
-from functools import partial
 from pathlib import Path
 from textwrap import shorten
 from typing import Any, Literal
 
-from lionagi import ln
-from lionagi.libs.schema.as_readable import as_readable
+from lionherd_core import ln
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 HAS_CLAUDE_CODE_CLI = False
@@ -470,9 +469,6 @@ async def stream_cc_cli_events(request: ClaudeCodeRequest):
     yield {"type": "done"}
 
 
-print_readable = partial(as_readable, md=True, display_str=True)
-
-
 def _pp_system(sys_obj: dict[str, Any], theme) -> None:
     txt = (
         f"◼️  **Claude Code Session**  \n"
@@ -481,7 +477,7 @@ def _pp_system(sys_obj: dict[str, Any], theme) -> None:
         f"- tools: {', '.join(sys_obj.get('tools', [])[:8])}"
         + ("…" if len(sys_obj.get("tools", [])) > 8 else "")
     )
-    print_readable(txt, border=False, theme=theme)
+    print(txt)
 
 
 def _pp_thinking(thought: str, theme) -> None:
@@ -489,7 +485,7 @@ def _pp_thinking(thought: str, theme) -> None:
     🧠 Thinking:
     {thought}
     """
-    print_readable(text, border=True, theme=theme)
+    print(text)
 
 
 def _pp_assistant_text(text: str, theme) -> None:
@@ -497,20 +493,20 @@ def _pp_assistant_text(text: str, theme) -> None:
     > 🗣️ Claude:
     {text}
     """
-    print_readable(txt, theme=theme)
+    print(txt)
 
 
 def _pp_tool_use(tu: dict[str, Any], theme) -> None:
     preview = shorten(str(tu["input"]).replace("\n", " "), 130)
     body = f"- 🔧 Tool Use — {tu['name']}({tu['id']}) - input: {preview}"
-    print_readable(body, border=False, panel=False, theme=theme)
+    print(body)
 
 
 def _pp_tool_result(tr: dict[str, Any], theme) -> None:
     body_preview = shorten(str(tr["content"]).replace("\n", " "), 130)
     status = "ERR" if tr.get("is_error") else "OK"
     body = f"- 📄 Tool Result({tr['tool_use_id']}) - {status}\n\n\tcontent: {body_preview}"
-    print_readable(body, border=False, panel=False, theme=theme)
+    print(body)
 
 
 def _pp_final(sess: ClaudeSession, theme) -> None:
@@ -523,7 +519,7 @@ def _pp_final(sess: ClaudeSession, theme) -> None:
         f"- duration: **{sess.duration_ms} ms** (API {sess.duration_api_ms} ms)  \n"
         f"- tokens in/out: {usage.get('input_tokens', 0)}/{usage.get('output_tokens', 0)}"
     )
-    print_readable(txt, theme=theme)
+    print(txt)
 
 
 # --------------------------------------------------------------------------- internal utils
@@ -532,7 +528,7 @@ def _pp_final(sess: ClaudeSession, theme) -> None:
 async def _maybe_await(func, *args, **kw):
     """Call func which may be sync or async."""
     res = func(*args, **kw) if func else None
-    if ln.is_coro_func(res):
+    if inspect.iscoroutine(res):
         await res
 
 
