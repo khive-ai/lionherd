@@ -18,10 +18,9 @@ from lionherd.services.third_party.claude_code import (
     ClaudeCodeRequest,
     ClaudeSession,
     _extract_summary,
-    stream_claude_code_cli,
     stream_cc_cli_events,
+    stream_claude_code_cli,
 )
-
 
 # ============================================================================
 # ClaudeCodeRequest Tests
@@ -114,16 +113,12 @@ class TestClaudeCodeRequest:
 
     def test_permission_mode_when_dangerously_skip_then_normalizes(self):
         """Test permission mode normalization."""
-        request = ClaudeCodeRequest(
-            prompt="test", permission_mode="dangerously-skip-permissions"
-        )
+        request = ClaudeCodeRequest(prompt="test", permission_mode="dangerously-skip-permissions")
         assert request.permission_mode == "bypassPermissions"
 
     def test_permission_mode_when_flag_format_then_normalizes(self):
         """Test permission mode normalization with flag format."""
-        request = ClaudeCodeRequest(
-            prompt="test", permission_mode="--dangerously-skip-permissions"
-        )
+        request = ClaudeCodeRequest(prompt="test", permission_mode="--dangerously-skip-permissions")
         assert request.permission_mode == "bypassPermissions"
 
     def test_cwd_when_no_workspace_then_returns_repo(self):
@@ -140,17 +135,13 @@ class TestClaudeCodeRequest:
     def test_cwd_when_absolute_workspace_then_raises(self):
         """Test absolute workspace path raises error."""
         with pytest.raises(ValueError, match="must be relative"):
-            request = ClaudeCodeRequest(
-                prompt="test", repo=Path("/test/repo"), ws="/absolute/path"
-            )
+            request = ClaudeCodeRequest(prompt="test", repo=Path("/test/repo"), ws="/absolute/path")
             request.cwd()
 
     def test_cwd_when_directory_traversal_then_raises(self):
         """Test directory traversal prevention."""
         with pytest.raises(ValueError, match="Directory traversal detected"):
-            request = ClaudeCodeRequest(
-                prompt="test", repo=Path("/test/repo"), ws="../escape"
-            )
+            request = ClaudeCodeRequest(prompt="test", repo=Path("/test/repo"), ws="../escape")
             request.cwd()
 
     def test_bypass_permissions_when_workspace_outside_repo_then_raises(self):
@@ -212,9 +203,7 @@ class TestClaudeCodeRequest:
 
     def test_as_cmd_args_when_bypass_permissions_then_includes_flag(self):
         """Test bypass permissions flag."""
-        request = ClaudeCodeRequest(
-            prompt="test", permission_mode="bypassPermissions"
-        )
+        request = ClaudeCodeRequest(prompt="test", permission_mode="bypassPermissions")
         args = request.as_cmd_args()
         assert "--dangerously-skip-permissions" in args
 
@@ -227,9 +216,7 @@ class TestClaudeCodeRequest:
 
     def test_as_cmd_args_when_permission_prompt_tool_then_includes(self):
         """Test permission prompt tool."""
-        request = ClaudeCodeRequest(
-            prompt="test", permission_prompt_tool_name="AskUser"
-        )
+        request = ClaudeCodeRequest(prompt="test", permission_prompt_tool_name="AskUser")
         args = request.as_cmd_args()
         assert "--permission-prompt-tool" in args
         assert "AskUser" in args
@@ -352,9 +339,7 @@ class TestExtractSummary:
     def test_extract_summary_when_write_tool_then_categorizes(self):
         """Test Write tool categorization."""
         session = ClaudeSession(
-            tool_uses=[
-                {"id": "t1", "name": "Write", "input": {"file_path": "output.txt"}}
-            ]
+            tool_uses=[{"id": "t1", "name": "Write", "input": {"file_path": "output.txt"}}]
         )
         summary = _extract_summary(session)
         assert summary["tool_counts"]["Write"] == 1
@@ -372,9 +357,7 @@ class TestExtractSummary:
     def test_extract_summary_when_bash_tool_then_summarizes_command(self):
         """Test Bash tool command summarization."""
         session = ClaudeSession(
-            tool_uses=[
-                {"id": "t1", "name": "Bash", "input": {"command": "ls -la /test"}}
-            ]
+            tool_uses=[{"id": "t1", "name": "Bash", "input": {"command": "ls -la /test"}}]
         )
         summary = _extract_summary(session)
         assert "Ran: ls -la /test" in summary["key_actions"]
@@ -407,9 +390,7 @@ class TestExtractSummary:
 
     def test_extract_summary_when_mcp_tool_then_extracts_operation(self):
         """Test MCP tool operation extraction."""
-        session = ClaudeSession(
-            tool_uses=[{"id": "t1", "name": "mcp__khive__recall", "input": {}}]
-        )
+        session = ClaudeSession(tool_uses=[{"id": "t1", "name": "mcp__khive__recall", "input": {}}])
         summary = _extract_summary(session)
         assert "MCP khive__recall" in summary["key_actions"]
 
@@ -472,9 +453,7 @@ class TestStreamCcCliEvents:
     @pytest.mark.asyncio
     async def test_stream_when_no_cli_then_raises(self):
         """Test error when CLI not found."""
-        with patch(
-            "lionherd.services.third_party.claude_code.CLAUDE_CLI", None
-        ):
+        with patch("lionherd.services.third_party.claude_code.CLAUDE_CLI", None):
             request = ClaudeCodeRequest(prompt="test")
             with pytest.raises(RuntimeError, match="Claude CLI binary not found"):
                 async for _ in stream_cc_cli_events(request):
@@ -483,11 +462,10 @@ class TestStreamCcCliEvents:
     @pytest.mark.asyncio
     async def test_stream_when_cli_available_then_yields_objects(self):
         """Test streaming with CLI available."""
-        with patch(
-            "lionherd.services.third_party.claude_code.CLAUDE_CLI", "claude"
-        ), patch(
-            "lionherd.services.third_party.claude_code._ndjson_from_cli"
-        ) as mock_ndjson:
+        with (
+            patch("lionherd.services.third_party.claude_code.CLAUDE_CLI", "claude"),
+            patch("lionherd.services.third_party.claude_code._ndjson_from_cli") as mock_ndjson,
+        ):
             # Mock async generator
             async def mock_generator(req):
                 yield {"type": "system", "session_id": "s1"}
@@ -520,9 +498,7 @@ class TestStreamClaudeCodeCli:
             {"type": "done"},
         ]
 
-        with patch(
-            "lionherd.services.third_party.claude_code.stream_cc_cli_events"
-        ) as mock:
+        with patch("lionherd.services.third_party.claude_code.stream_cc_cli_events") as mock:
 
             async def mock_gen(req):
                 for event in mock_stream:
@@ -546,16 +522,12 @@ class TestStreamClaudeCodeCli:
         mock_stream = [
             {
                 "type": "assistant",
-                "message": {
-                    "content": [{"type": "thinking", "thinking": "Let me think..."}]
-                },
+                "message": {"content": [{"type": "thinking", "thinking": "Let me think..."}]},
             },
             {"type": "done"},
         ]
 
-        with patch(
-            "lionherd.services.third_party.claude_code.stream_cc_cli_events"
-        ) as mock:
+        with patch("lionherd.services.third_party.claude_code.stream_cc_cli_events") as mock:
 
             async def mock_gen(req):
                 for event in mock_stream:
@@ -582,9 +554,7 @@ class TestStreamClaudeCodeCli:
             {"type": "done"},
         ]
 
-        with patch(
-            "lionherd.services.third_party.claude_code.stream_cc_cli_events"
-        ) as mock:
+        with patch("lionherd.services.third_party.claude_code.stream_cc_cli_events") as mock:
 
             async def mock_gen(req):
                 for event in mock_stream:
@@ -622,9 +592,7 @@ class TestStreamClaudeCodeCli:
             {"type": "done"},
         ]
 
-        with patch(
-            "lionherd.services.third_party.claude_code.stream_cc_cli_events"
-        ) as mock:
+        with patch("lionherd.services.third_party.claude_code.stream_cc_cli_events") as mock:
 
             async def mock_gen(req):
                 for event in mock_stream:
@@ -661,9 +629,7 @@ class TestStreamClaudeCodeCli:
             {"type": "done"},
         ]
 
-        with patch(
-            "lionherd.services.third_party.claude_code.stream_cc_cli_events"
-        ) as mock:
+        with patch("lionherd.services.third_party.claude_code.stream_cc_cli_events") as mock:
 
             async def mock_gen(req):
                 for event in mock_stream:
@@ -700,9 +666,7 @@ class TestStreamClaudeCodeCli:
             {"type": "done"},
         ]
 
-        with patch(
-            "lionherd.services.third_party.claude_code.stream_cc_cli_events"
-        ) as mock:
+        with patch("lionherd.services.third_party.claude_code.stream_cc_cli_events") as mock:
 
             async def mock_gen(req):
                 for event in mock_stream:
@@ -735,9 +699,7 @@ class TestStreamClaudeCodeCli:
             {"type": "done"},
         ]
 
-        with patch(
-            "lionherd.services.third_party.claude_code.stream_cc_cli_events"
-        ) as mock:
+        with patch("lionherd.services.third_party.claude_code.stream_cc_cli_events") as mock:
 
             async def mock_gen(req):
                 for event in mock_stream:
@@ -780,9 +742,7 @@ class TestStreamClaudeCodeCli:
             nonlocal on_text_called
             on_text_called = True
 
-        with patch(
-            "lionherd.services.third_party.claude_code.stream_cc_cli_events"
-        ) as mock:
+        with patch("lionherd.services.third_party.claude_code.stream_cc_cli_events") as mock:
 
             async def mock_gen(req):
                 for event in mock_stream:
@@ -792,9 +752,7 @@ class TestStreamClaudeCodeCli:
 
             request = ClaudeCodeRequest(prompt="test")
 
-            async for _ in stream_claude_code_cli(
-                request, on_system=on_system, on_text=on_text
-            ):
+            async for _ in stream_claude_code_cli(request, on_system=on_system, on_text=on_text):
                 pass
 
             assert on_system_called
@@ -817,11 +775,10 @@ class TestStreamClaudeCodeCli:
             {"type": "done"},
         ]
 
-        with patch(
-            "lionherd.services.third_party.claude_code.stream_cc_cli_events"
-        ) as mock, patch(
-            "lionherd.services.third_party.claude_code._pp_system"
-        ) as mock_pp:
+        with (
+            patch("lionherd.services.third_party.claude_code.stream_cc_cli_events") as mock,
+            patch("lionherd.services.third_party.claude_code._pp_system") as mock_pp,
+        ):
 
             async def mock_gen(req):
                 for event in mock_stream:
@@ -852,9 +809,7 @@ class TestStreamClaudeCodeCli:
             {"type": "done"},
         ]
 
-        with patch(
-            "lionherd.services.third_party.claude_code.stream_cc_cli_events"
-        ) as mock:
+        with patch("lionherd.services.third_party.claude_code.stream_cc_cli_events") as mock:
 
             async def mock_gen(req):
                 for event in mock_stream:
@@ -905,13 +860,13 @@ class TestClaudeCodeIntegration:
         mock_proc.terminate = Mock()
 
         # Mock json_repair module to avoid import error
-        with patch(
-            "lionherd.services.third_party.claude_code.CLAUDE_CLI", "claude"
-        ), patch(
-            "lionherd.services.third_party.claude_code.asyncio.create_subprocess_exec",
-            return_value=mock_proc,
-        ), patch.dict(
-            "sys.modules", {"json_repair": MagicMock()}
+        with (
+            patch("lionherd.services.third_party.claude_code.CLAUDE_CLI", "claude"),
+            patch(
+                "lionherd.services.third_party.claude_code.asyncio.create_subprocess_exec",
+                return_value=mock_proc,
+            ),
+            patch.dict("sys.modules", {"json_repair": MagicMock()}),
         ):
             request = ClaudeCodeRequest(prompt="test")
             session = ClaudeSession()

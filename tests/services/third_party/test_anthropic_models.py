@@ -29,7 +29,6 @@ from lionherd.services.third_party.anthropic_models import (
     Usage,
 )
 
-
 # ============================================================================
 # TextContentBlock Tests
 # ============================================================================
@@ -250,9 +249,7 @@ class TestCreateMessageRequest:
     def test_request_when_missing_model_then_fails(self):
         """Test missing model fails."""
         with pytest.raises(ValidationError):
-            CreateMessageRequest(
-                messages=[{"role": "user", "content": "Hello"}], max_tokens=100
-            )
+            CreateMessageRequest(messages=[{"role": "user", "content": "Hello"}], max_tokens=100)
 
     def test_request_when_missing_messages_then_fails(self):
         """Test missing messages fails."""
@@ -482,9 +479,7 @@ class TestContentBlockStartEvent:
 
     def test_content_block_start_when_valid_then_succeeds(self):
         """Test valid content block start."""
-        event = ContentBlockStartEvent(
-            index=0, content_block={"type": "text", "text": ""}
-        )
+        event = ContentBlockStartEvent(index=0, content_block={"type": "text", "text": ""})
         assert event.type == "content_block_start"
         assert event.index == 0
 

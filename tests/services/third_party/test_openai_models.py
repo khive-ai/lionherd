@@ -38,7 +38,6 @@ from lionherd.services.third_party.openai_models import (
     UserMessage,
 )
 
-
 # ============================================================================
 # ChatRole Tests
 # ============================================================================
@@ -374,9 +373,7 @@ class TestAssistantMessage:
 
     def test_assistant_message_when_with_legacy_function_call_then_succeeds(self):
         """Test assistant message with legacy function call."""
-        msg = AssistantMessage(
-            function_call={"name": "get_weather", "arguments": "{}"}
-        )
+        msg = AssistantMessage(function_call={"name": "get_weather", "arguments": "{}"})
         assert msg.function_call.name == "get_weather"
 
     def test_assistant_message_when_no_content_then_succeeds(self):
@@ -655,17 +652,13 @@ class TestOpenAIChatCompletionsRequest:
 
     def test_is_reasoning_model_when_o1_then_uses_name_pattern(self):
         """Test is_reasoning_model with o1 model."""
-        req = OpenAIChatCompletionsRequest(
-            model="o1", messages=[{"role": "user", "content": "Hi"}]
-        )
+        req = OpenAIChatCompletionsRequest(model="o1", messages=[{"role": "user", "content": "Hi"}])
         # REASONING_MODELS is a generator, so check by name pattern
         assert req.model.startswith("o1")
 
     def test_is_reasoning_model_when_o3_then_uses_name_pattern(self):
         """Test is_reasoning_model with o3 model."""
-        req = OpenAIChatCompletionsRequest(
-            model="o3", messages=[{"role": "user", "content": "Hi"}]
-        )
+        req = OpenAIChatCompletionsRequest(model="o3", messages=[{"role": "user", "content": "Hi"}])
         # REASONING_MODELS is a generator, so check by name pattern
         assert req.model.startswith("o3")
 
