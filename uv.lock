@@ -331,7 +331,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.27.0" },
-    { name = "lionherd-core", specifier = ">=1.0.0a2" },
+    { name = "lionherd-core", git = "https://github.com/khive-ai/lionherd-core.git" },
     { name = "tiktoken", specifier = ">=0.8.0" },
 ]
 
@@ -348,14 +348,10 @@ dev = [
 [[package]]
 name = "lionherd-core"
 version = "1.0.0a2"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/khive-ai/lionherd-core.git#f730d15f91361be3b352674d56f1b3f58782ca9d" }
 dependencies = [
     { name = "anyio" },
     { name = "pydapter" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/2a/57/7b1edb7e2f1f2bf2bcb60632ce53a337753a1655cd2d769ccdc199b6cc1b/lionherd_core-1.0.0a2.tar.gz", hash = "sha256:28f17464999b4edbd79d550ee1c9a7f7063083ccaf1e72859eddb8142f4313c5", size = 430435, upload-time = "2025-11-05T21:44:44.395Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/96/2d/235ba7ae52d2a414cd155726df5ead97350bfee57df80f7a579bd8f34131/lionherd_core-1.0.0a2-py3-none-any.whl", hash = "sha256:5194931ca3d717769affb806825c59d7532133142f608f4b9d04289c3cb4ed6c", size = 120373, upload-time = "2025-11-05T21:44:43.346Z" },
 ]
 
 [[package]]
