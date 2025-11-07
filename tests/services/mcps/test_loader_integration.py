@@ -45,6 +45,7 @@ def fetch_server_config():
     }
 
 
+@pytest.mark.timeout(30)
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_load_mcp_tools_with_fetch_server_auto_discovery(registry, fetch_server_config):
@@ -70,6 +71,7 @@ async def test_load_mcp_tools_with_fetch_server_auto_discovery(registry, fetch_s
     assert registry.has("fetch"), "fetch tool should be registered in ServiceRegistry"
 
 
+@pytest.mark.timeout(30)
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_load_mcp_tools_with_fetch_server_specific_tool(registry, fetch_server_config):
@@ -92,6 +94,7 @@ async def test_load_mcp_tools_with_fetch_server_specific_tool(registry, fetch_se
     assert registry.has("fetch"), "fetch tool should be in registry"
 
 
+@pytest.mark.timeout(30)
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_fetch_tool_invocation_real_url(registry, fetch_server_config):
@@ -140,6 +143,7 @@ async def test_fetch_tool_invocation_real_url(registry, fetch_server_config):
     )
 
 
+@pytest.mark.timeout(30)
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_fetch_server_multiple_urls(registry, fetch_server_config):
@@ -187,6 +191,7 @@ async def test_fetch_server_multiple_urls(registry, fetch_server_config):
     assert response1_text != response2_text, "Different URLs should return different content"
 
 
+@pytest.mark.timeout(30)
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_fetch_server_with_update_flag(registry, fetch_server_config):
