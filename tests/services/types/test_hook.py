@@ -178,7 +178,7 @@ def test_validate_hooks_when_key_not_in_allowed_then_raises():
 
 def test_validate_hooks_when_non_callable_value_then_raises():
     """Test validate_hooks raises when value is not callable."""
-    with pytest.raises(ValueError, match="Hook for .+ must be callable"):
+    with pytest.raises(ValueError, match=r"Hook for .+ must be callable"):
         validate_hooks({HookPhase.PreEventCreate: "not_callable"})
 
 
@@ -217,7 +217,7 @@ def test_validate_stream_handlers_when_invalid_key_type_then_raises():
 
 def test_validate_stream_handlers_when_non_callable_then_raises():
     """Test validate_stream_handlers raises when value is not callable."""
-    with pytest.raises(ValueError, match="Stream handler for .+ must be callable"):
+    with pytest.raises(ValueError, match=r"Stream handler for .+ must be callable"):
         validate_stream_handlers({"text": "not_callable"})
 
 
@@ -281,7 +281,7 @@ def test_hook_registry_init_when_valid_stream_handlers_then_stores():
 
 def test_hook_registry_init_when_invalid_stream_handlers_then_raises():
     """Test HookRegistry initialization validates stream handlers."""
-    with pytest.raises(ValueError, match="Stream handler for .+ must be callable"):
+    with pytest.raises(ValueError, match=r"Stream handler for .+ must be callable"):
         HookRegistry(stream_handlers={"text": "not_callable"})
 
 
@@ -509,25 +509,24 @@ async def test_registry_call_when_pre_event_create_then_delegates():
 
     (result_tuple, meta) = await registry.call(MockEvent, hook_phase=HookPhase.PreEventCreate)
 
-    result, should_exit, status = result_tuple
+    _result, _should_exit, status = result_tuple
     assert status == EventStatus.COMPLETED
     assert "lion_class" in meta
 
 
 @pytest.mark.asyncio
 async def test_registry_call_when_pre_invocation_then_delegates():
-    """Test registry.call() with PostInvocation phase (PreInvocation unreachable due to bug in line 328)."""
+    """Test registry.call() with PreInvocation phase."""
     event = MockEvent()
 
     async def hook(evt, **kw):
         return "result"
 
-    # Use PostInvocation instead - PreInvocation has a bug in registry.call() matching
-    registry = HookRegistry(hooks={HookPhase.PostInvocation: hook})
+    registry = HookRegistry(hooks={HookPhase.PreInvocation: hook})
 
-    (result_tuple, meta) = await registry.call(event, hook_phase=HookPhase.PostInvocation)
+    (result_tuple, meta) = await registry.call(event, hook_phase=HookPhase.PreInvocation)
 
-    result, should_exit, status = result_tuple
+    result, _should_exit, _status = result_tuple
     assert result == "result"
     assert "event_id" in meta
     assert "event_created_at" in meta
@@ -545,7 +544,7 @@ async def test_registry_call_when_post_invocation_then_delegates():
 
     (result_tuple, meta) = await registry.call(event, hook_phase=HookPhase.PostInvocation)
 
-    result, should_exit, status = result_tuple
+    _result, _should_exit, status = result_tuple
     assert status == EventStatus.COMPLETED
     assert "event_id" in meta
 
@@ -562,26 +561,45 @@ async def test_registry_call_when_chunk_type_then_delegates():
     result_tuple = await registry.call(None, hook_phase=None, chunk_type="text", chunk="data")
 
     # Note: call() with chunk_type returns different structure
-    result, should_exit, status = result_tuple
+    result, _should_exit, _status = result_tuple
     assert result == "handled"
 
 
 @pytest.mark.asyncio
 async def test_registry_call_when_phase_value_string_then_matches():
-    """Test registry.call() with HookPhase.value string (line 330, 335, 342)."""
+    """Test registry.call() with HookPhase.value string for all phases."""
     event = MockEvent()
+
+    async def pre_create_hook(event_type, **kw):
+        return None
 
     async def hook(evt, **kw):
         return "matched"
 
-    # Use PostInvocation instead - PreInvocation has a bug in registry.call() matching
-    registry = HookRegistry(hooks={HookPhase.PostInvocation: hook})
+    # Test PreEventCreate.value (was broken before fix)
+    registry_pre_create = HookRegistry(hooks={HookPhase.PreEventCreate: pre_create_hook})
+    (result_tuple, meta) = await registry_pre_create.call(
+        MockEvent, hook_phase=HookPhase.PreEventCreate.value
+    )
+    _result, _should_exit, status = result_tuple
+    assert status == EventStatus.COMPLETED
+    assert "lion_class" in meta
 
-    # Pass string value instead of enum
-    (result_tuple, meta) = await registry.call(event, hook_phase=HookPhase.PostInvocation.value)
-
-    result, should_exit, status = result_tuple
+    # Test PreInvocation.value
+    registry_pre = HookRegistry(hooks={HookPhase.PreInvocation: hook})
+    (result_tuple, meta) = await registry_pre.call(event, hook_phase=HookPhase.PreInvocation.value)
+    result, _should_exit, _status = result_tuple
     assert result == "matched"
+    assert "event_id" in meta
+
+    # Test PostInvocation.value
+    registry_post = HookRegistry(hooks={HookPhase.PostInvocation: hook})
+    (result_tuple, meta) = await registry_post.call(
+        event, hook_phase=HookPhase.PostInvocation.value
+    )
+    result, _should_exit, _status = result_tuple
+    assert result == "matched"
+    assert "event_id" in meta
 
 
 # =============================================================================
@@ -683,7 +701,7 @@ async def test_hook_event_invoke_when_success_then_completed():
 
     assert hook_event.execution.status == EventStatus.COMPLETED
     assert hook_event.execution.response is not None
-    assert hook_event.assosiated_event_info is not None
+    assert hook_event.associated_event_info is not None
 
 
 @pytest.mark.asyncio

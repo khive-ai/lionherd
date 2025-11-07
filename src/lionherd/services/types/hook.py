@@ -27,7 +27,7 @@ class HookPhase(Enum):
     ErrorHandling = "error_handling"
 
 
-class AssosiatedEventInfo(TypedDict, total=False):
+class AssociatedEventInfo(TypedDict, total=False):
     """Information about the event associated with the hook."""
 
     lion_class: str
@@ -50,7 +50,7 @@ class HookEvent(Event):
     _should_exit: bool = PrivateAttr(False)
     _exit_cause: BaseException | None = PrivateAttr(None)
 
-    assosiated_event_info: AssosiatedEventInfo | None = None
+    associated_event_info: AssociatedEventInfo | None = None
 
     @field_validator("exit", mode="before")
     def _validate_exit(cls, v: Any) -> bool:  # noqa: N805
@@ -70,7 +70,7 @@ class HookEvent(Event):
                     **self.params,
                 )
 
-                self.assosiated_event_info = AssosiatedEventInfo(**meta)
+                self.associated_event_info = AssociatedEventInfo(**meta)
                 self._should_exit = se
                 self.execution.status = st
                 if isinstance(res, tuple) and len(res) == 2:
@@ -325,7 +325,7 @@ class HookRegistry:
         if hook_phase:
             meta = {"lion_class": event_like.class_name(full=True)}
             match hook_phase:
-                case HookPhase.PreEventCreate | HookPhase.PreInvocation.value:
+                case HookPhase.PreEventCreate | HookPhase.PreEventCreate.value:
                     return (
                         await self.pre_event_create(event_like, exit=exit, **kw),
                         meta,
