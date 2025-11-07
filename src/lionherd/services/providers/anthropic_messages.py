@@ -129,7 +129,7 @@ class AnthropicMessagesEndpoint(Endpoint):
         headers["anthropic-version"] = anthropic_version
 
         # Add API key with x-api-key header (Anthropic-specific)
-        api_key = self.get_api_key()
+        api_key = self.config._api_key
         if api_key:
             headers["x-api-key"] = api_key
 
@@ -190,8 +190,8 @@ class AnthropicMessagesEndpoint(Endpoint):
             metadata["tool_uses"] = tool_uses
 
         return NormalizedResponse(
-            text=text,
-            raw=response,
-            provider=self.config.provider,
+            status="success",
+            data=text,
+            raw_response=response,
             metadata=metadata,
         )

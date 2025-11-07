@@ -76,13 +76,16 @@ class OpenAIChatEndpoint(Endpoint):
         """Initialize with OpenAI config."""
         if config is None:
             config = create_openai_config(**kwargs)
+        elif isinstance(config, dict):
+            # Convert dict to EndpointConfig first
+            config = EndpointConfig(**config)
 
         if config.request_options is None:
             from ..third_party.openai_models import OpenAIChatCompletionsRequest
 
             config.request_options = OpenAIChatCompletionsRequest
 
-        super().__init__(config=config, circuit_breaker=circuit_breaker)
+        super().__init__(config=config, circuit_breaker=circuit_breaker, **kwargs)
 
     def create_payload(
         self,
@@ -119,7 +122,7 @@ class OpenAIChatEndpoint(Endpoint):
 
         # Build headers (standard Authorization: Bearer)
         headers = {"Content-Type": "application/json"}
-        api_key = self.get_api_key()
+        api_key = self.config._api_key
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
 
@@ -160,8 +163,8 @@ class OpenAIChatEndpoint(Endpoint):
             metadata.update({k: message[k] for k in ("tool_calls",) if k in message})
 
         return NormalizedResponse(
-            text=text,
-            raw=response,
-            provider=self.config.provider,
+            status="success",
+            data=text,
+            raw_response=response,
             metadata=metadata,
         )
