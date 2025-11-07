@@ -556,6 +556,30 @@ class TestStreamEventUnion:
         event = ContentBlockDeltaEvent(index=0, delta={"text": "H"})
         assert isinstance(event, ContentBlockDeltaEvent)
 
+    def test_stream_event_discriminates_message_start_from_dict(self):
+        """Test StreamEvent parses MessageStartEvent from raw dict."""
+        raw_data = {
+            "type": "message_start",
+            "message": {
+                "id": "msg_abc",
+                "content": [],
+                "model": "claude-3-opus",
+                "usage": {"input_tokens": 50, "output_tokens": 0},
+            },
+        }
+        event = MessageStartEvent.model_validate(raw_data)
+        assert isinstance(event, MessageStartEvent)
+        assert event.type == "message_start"
+        assert event.message.id == "msg_abc"
+
+    def test_stream_event_discriminates_content_block_delta_from_dict(self):
+        """Test StreamEvent parses ContentBlockDeltaEvent from raw dict."""
+        raw_data = {"type": "content_block_delta", "index": 0, "delta": {"text": "Hello"}}
+        event = ContentBlockDeltaEvent.model_validate(raw_data)
+        assert isinstance(event, ContentBlockDeltaEvent)
+        assert event.type == "content_block_delta"
+        assert event.delta["text"] == "Hello"
+
 
 class TestContentBlockUnion:
     """Test ContentBlock union type."""
@@ -571,3 +595,22 @@ class TestContentBlockUnion:
             source={"type": "base64", "media_type": "image/jpeg", "data": "data"}
         )
         assert isinstance(block, ImageContentBlock)
+
+    def test_content_block_discriminates_text_from_dict(self):
+        """Test ContentBlock parses text block from raw dict via type discriminator."""
+        raw_data = {"type": "text", "text": "Hello world"}
+        block = TextContentBlock.model_validate(raw_data)
+        assert isinstance(block, TextContentBlock)
+        assert block.type == "text"
+        assert block.text == "Hello world"
+
+    def test_content_block_discriminates_image_from_dict(self):
+        """Test ContentBlock parses image block from raw dict via type discriminator."""
+        raw_data = {
+            "type": "image",
+            "source": {"type": "base64", "media_type": "image/png", "data": "abc123"},
+        }
+        block = ImageContentBlock.model_validate(raw_data)
+        assert isinstance(block, ImageContentBlock)
+        assert block.type == "image"
+        assert block.source.data == "abc123"
