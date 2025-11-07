@@ -131,6 +131,8 @@ class ServiceRegistry:
     ) -> dict[str, list[str]]:
         """Load MCP configurations from a .mcp.json file.
 
+        Delegates to load_mcp_config from the loader module.
+
         Args:
             config_path: Path to .mcp.json configuration file
             server_names: Optional list of server names to load.
@@ -140,25 +142,11 @@ class ServiceRegistry:
         Returns:
             Dict mapping server names to lists of registered tool names
         """
-        import logging
+        from lionherd.services.mcps.loader import load_mcp_config
 
-        from lionherd.services.mcps import MCPConnectionPool
-
-        logger = logging.getLogger(__name__)
-
-        MCPConnectionPool.load_config(config_path)
-
-        if server_names is None:
-            server_names = list(MCPConnectionPool._configs.keys())
-
-        all_tools = {}
-        for server_name in server_names:
-            try:
-                tools = await self.register_mcp_server({"server": server_name}, update=update)
-                all_tools[server_name] = tools
-                logger.info(f"✅ Registered {len(tools)} tools from server '{server_name}'")
-            except Exception as e:
-                logger.error(f"⚠️  Failed to register server '{server_name}': {e}")
-                all_tools[server_name] = []
-
-        return all_tools
+        return await load_mcp_config(
+            registry=self,
+            config_path=config_path,
+            server_names=server_names,
+            update=update,
+        )

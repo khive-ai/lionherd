@@ -32,6 +32,21 @@ markers = [
 ]
 filterwarnings = ["ignore::RuntimeWarning"]
 
+[tool.coverage.run]
+omit = [
+  "src/lionherd/services/providers/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
 [dependency-groups]
 dev = [
   "pre-commit>=4.3.0",

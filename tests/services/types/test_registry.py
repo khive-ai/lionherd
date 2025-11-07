@@ -560,18 +560,24 @@ class TestRegistryMCPIntegration:
             assert result == "raw_string_result"
 
     async def test_load_mcp_config(self):
-        """Test load_mcp_config loads and registers servers."""
+        """Test load_mcp_config delegates to loader module."""
         registry = ServiceRegistry()
 
-        mock_pool = Mock()
-        mock_pool._configs = {"server1": {}, "server2": {}}
+        mock_result = {
+            "server1": ["tool1", "tool2"],
+            "server2": ["tool1", "tool2"],
+        }
 
-        with (
-            patch("lionherd.services.mcps.MCPConnectionPool.load_config"),
-            patch("lionherd.services.mcps.MCPConnectionPool._configs", mock_pool._configs),
-            patch.object(registry, "register_mcp_server", return_value=["tool1", "tool2"]),
-        ):
+        with patch("lionherd.services.mcps.loader.load_mcp_config", return_value=mock_result) as mock_load:
             result = await registry.load_mcp_config("/path/to/.mcp.json")
+
+            # Verify delegation occurred with correct parameters
+            mock_load.assert_called_once_with(
+                registry=registry,
+                config_path="/path/to/.mcp.json",
+                server_names=None,
+                update=False,
+            )
 
             assert "server1" in result
             assert "server2" in result
@@ -579,19 +585,25 @@ class TestRegistryMCPIntegration:
             assert result["server2"] == ["tool1", "tool2"]
 
     async def test_load_mcp_config_specific_servers(self):
-        """Test load_mcp_config with specific server_names."""
+        """Test load_mcp_config delegates with specific server_names."""
         registry = ServiceRegistry()
 
-        mock_pool = Mock()
-        mock_pool._configs = {"server1": {}, "server2": {}, "server3": {}}
+        mock_result = {
+            "server1": ["tool1"],
+            "server3": ["tool1"],
+        }
 
-        with (
-            patch("lionherd.services.mcps.MCPConnectionPool.load_config"),
-            patch("lionherd.services.mcps.MCPConnectionPool._configs", mock_pool._configs),
-            patch.object(registry, "register_mcp_server", return_value=["tool1"]),
-        ):
+        with patch("lionherd.services.mcps.loader.load_mcp_config", return_value=mock_result) as mock_load:
             result = await registry.load_mcp_config(
                 "/path/to/.mcp.json", server_names=["server1", "server3"]
+            )
+
+            # Verify delegation with server_names parameter
+            mock_load.assert_called_once_with(
+                registry=registry,
+                config_path="/path/to/.mcp.json",
+                server_names=["server1", "server3"],
+                update=False,
             )
 
             assert "server1" in result
@@ -599,24 +611,25 @@ class TestRegistryMCPIntegration:
             assert "server2" not in result
 
     async def test_load_mcp_config_server_failure(self):
-        """Test load_mcp_config handles server registration failure."""
+        """Test load_mcp_config delegates and handles server registration failure."""
         registry = ServiceRegistry()
 
-        mock_pool = Mock()
-        mock_pool._configs = {"server1": {}, "server2": {}}
+        # Mock result with one server success, one server failure
+        mock_result = {
+            "server1": ["tool1"],
+            "server2": [],  # Failed, empty list
+        }
 
-        async def mock_register(server_config, update=False):
-            if server_config["server"] == "server1":
-                return ["tool1"]
-            else:
-                raise Exception("Server2 failed")
-
-        with (
-            patch("lionherd.services.mcps.MCPConnectionPool.load_config"),
-            patch("lionherd.services.mcps.MCPConnectionPool._configs", mock_pool._configs),
-            patch.object(registry, "register_mcp_server", side_effect=mock_register),
-        ):
+        with patch("lionherd.services.mcps.loader.load_mcp_config", return_value=mock_result) as mock_load:
             result = await registry.load_mcp_config("/path/to/.mcp.json")
+
+            # Verify delegation occurred
+            mock_load.assert_called_once_with(
+                registry=registry,
+                config_path="/path/to/.mcp.json",
+                server_names=None,
+                update=False,
+            )
 
             assert result["server1"] == ["tool1"]
             assert result["server2"] == []  # Failed, empty list
