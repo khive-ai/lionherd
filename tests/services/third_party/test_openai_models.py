@@ -667,7 +667,9 @@ class TestOpenAIChatCompletionsRequest:
             reasoning_effort="high",  # Should be cleared for non-reasoning models
         )
         # Non-reasoning model should clear reasoning_effort
-        assert req.reasoning_effort is None, "reasoning_effort should be cleared for non-reasoning models"
+        assert req.reasoning_effort is None, (
+            "reasoning_effort should be cleared for non-reasoning models"
+        )
         # Regular params should be preserved
         assert req.temperature == 1.0
 
