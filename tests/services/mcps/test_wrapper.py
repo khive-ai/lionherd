@@ -246,9 +246,11 @@ class TestCreateClient:
 
     async def test_create_client_fastmcp_not_installed(self):
         """Test _create_client raises ImportError when fastmcp not installed."""
-        with patch("builtins.__import__", side_effect=ImportError("No module named 'fastmcp'")):
-            with pytest.raises(ImportError, match="FastMCP not installed"):
-                await MCPConnectionPool._create_client({"url": "http://localhost:8000"})
+        with (
+            patch("builtins.__import__", side_effect=ImportError("No module named 'fastmcp'")),
+            pytest.raises(ImportError, match="FastMCP not installed"),
+        ):
+            await MCPConnectionPool._create_client({"url": "http://localhost:8000"})
 
     async def test_create_client_url_connection(self):
         """Test _create_client creates URL-based connection."""
@@ -269,11 +271,13 @@ class TestCreateClient:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
 
         with (
-            patch("fastmcp.client.transports.StdioTransport", return_value=mock_transport) as MockTransport,
+            patch(
+                "fastmcp.client.transports.StdioTransport", return_value=mock_transport
+            ) as MockTransport,
             patch("fastmcp.Client", return_value=mock_client) as MockClient,
         ):
             config = {"command": "python", "args": ["-m", "server"]}
-            client = await MCPConnectionPool._create_client(config)
+            await MCPConnectionPool._create_client(config)
 
             # Verify transport creation
             MockTransport.assert_called_once()
@@ -298,7 +302,9 @@ class TestCreateClient:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
 
         with (
-            patch("fastmcp.client.transports.StdioTransport", return_value=mock_transport) as MockTransport,
+            patch(
+                "fastmcp.client.transports.StdioTransport", return_value=mock_transport
+            ) as MockTransport,
             patch("fastmcp.Client", return_value=mock_client),
             patch.dict(os.environ, {"EXISTING_VAR": "existing"}),
         ):
@@ -318,7 +324,9 @@ class TestCreateClient:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
 
         with (
-            patch("fastmcp.client.transports.StdioTransport", return_value=mock_transport) as MockTransport,
+            patch(
+                "fastmcp.client.transports.StdioTransport", return_value=mock_transport
+            ) as MockTransport,
             patch("fastmcp.Client", return_value=mock_client),
         ):
             config = {"command": "python", "debug": True}
@@ -336,7 +344,9 @@ class TestCreateClient:
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
 
         with (
-            patch("fastmcp.client.transports.StdioTransport", return_value=mock_transport) as MockTransport,
+            patch(
+                "fastmcp.client.transports.StdioTransport", return_value=mock_transport
+            ) as MockTransport,
             patch("fastmcp.Client", return_value=mock_client),
             patch.dict(os.environ, {"MCP_DEBUG": "true"}),
         ):
