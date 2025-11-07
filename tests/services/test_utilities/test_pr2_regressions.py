@@ -216,7 +216,7 @@ class TestPR2Regression:
         ]:
             call_count = 0
 
-            async def raises_error():
+            async def raises_error(exc_type=exc_type, exc_msg=exc_msg):
                 nonlocal call_count
                 call_count += 1
                 raise exc_type(exc_msg)
