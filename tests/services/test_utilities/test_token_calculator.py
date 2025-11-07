@@ -291,3 +291,62 @@ class TestTokenCalculator:
         )
         # When dict has neither 'text' nor 'image_url', function returns 0
         assert result == 0
+
+
+class TestTokenCalculatorExceptionPaths:
+    """Tests for exception handling paths in TokenCalculator."""
+
+    def test_calculate_embed_token_with_failing_tokenizer(self):
+        """Test calculate_embed_token exception path when tokenization fails."""
+        from lionherd.services.utilities.token_calculator import TokenCalculationError
+        from unittest.mock import patch
+
+        # Patch tiktoken.get_encoding to raise an exception
+        with patch("lionherd.services.utilities.token_calculator.tiktoken.get_encoding") as mock_enc:
+            mock_enc.side_effect = RuntimeError("Encoding failure")
+
+            with pytest.raises(TokenCalculationError, match="Embed token calculation failed"):
+                TokenCalculator.calculate_embed_token(["test"], model="gpt-4o")
+
+    def test_calculate_chatitem_with_non_stringable_object(self):
+        """Test _calculate_chatitem exception path with object that can't be stringified."""
+        from lionherd.services.utilities.token_calculator import TokenCalculationError
+
+        # Object that raises exception when converted to string
+        class BadObject:
+            def __str__(self):
+                raise RuntimeError("Cannot convert to string")
+
+        encoding = tiktoken.get_encoding("o200k_base")
+
+        with pytest.raises(TokenCalculationError, match="Chat item token calculation failed"):
+            TokenCalculator._calculate_chatitem(
+                {"text": BadObject()}, encoding.encode, "gpt-4o"
+            )
+
+
+    def test_calculate_chatitem_nested_list_exception(self):
+        """Test _calculate_chatitem with nested list that causes exception."""
+        from lionherd.services.utilities.token_calculator import TokenCalculationError
+
+        def failing_tokenizer(text):
+            if isinstance(text, str):
+                raise RuntimeError("Tokenizer failure")
+            return []
+
+        # Nested list with string will trigger exception in recursive call
+        with pytest.raises(TokenCalculationError):
+            TokenCalculator._calculate_chatitem(["nested", "list"], failing_tokenizer, "gpt-4o")
+
+    def test_calculate_embed_item_nested_list_exception(self):
+        """Test _calculate_embed_item with nested list that causes exception."""
+        from lionherd.services.utilities.token_calculator import TokenCalculationError
+
+        def failing_tokenizer(text):
+            if isinstance(text, str):
+                raise RuntimeError("Tokenizer failure")
+            return []
+
+        # Nested list with string will trigger exception in recursive call
+        with pytest.raises(TokenCalculationError):
+            TokenCalculator._calculate_embed_item(["nested", "list"], failing_tokenizer)
