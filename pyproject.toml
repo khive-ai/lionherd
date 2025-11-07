@@ -9,6 +9,9 @@ dependencies = [
   "tiktoken>=0.8.0",
 ]
 
+[project.optional-dependencies]
+mcp = ["fastmcp>=2.13.0"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -28,6 +31,22 @@ markers = [
   "slow: Slow tests (deselect with '-m \"not slow\"')",
 ]
 filterwarnings = ["ignore::RuntimeWarning"]
+
+[tool.coverage.run]
+omit = [
+  "src/lionherd/services/providers/*",
+  "src/lionherd/services/third_party/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
 
 [dependency-groups]
 dev = [
