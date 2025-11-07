@@ -55,6 +55,7 @@ async def load_mcp_tools(
         ... )
     """
     from lionherd.services import Tool, iModel
+    from lionherd.services.types.tool import ToolConfig
 
     from .wrapper import MCPConnectionPool
 
@@ -91,10 +92,12 @@ async def load_mcp_tools(
             # Create and register Tool
             try:
                 tool = Tool(
-                    name=qualified_name,
-                    provider=server_name or "mcp",
                     func_callable=mcp_callable,
-                    request_options=tool_request_options,
+                    config=ToolConfig(
+                        name=qualified_name,
+                        provider=server_name or "mcp",
+                        request_options=tool_request_options,
+                    ),
                 )
                 model = iModel(backend=tool)
                 registry.register(model, update=update)
@@ -155,11 +158,13 @@ async def load_mcp_tools(
                     continue
 
                 tool_obj = Tool(
-                    name=qualified_name,
-                    provider=server_name or "mcp",
                     func_callable=mcp_callable,
+                    config=ToolConfig(
+                        name=qualified_name,
+                        provider=server_name or "mcp",
+                        request_options=tool_request_options,
+                    ),
                     tool_schema=tool_schema,
-                    request_options=tool_request_options,
                 )
                 model = iModel(backend=tool_obj)
                 registry.register(model, update=update)

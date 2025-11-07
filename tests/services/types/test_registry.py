@@ -19,6 +19,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 import pytest
 
 from lionherd.services import Calling, ServiceBackend, ServiceRegistry, iModel
+from lionherd.services.mcps.loader import create_mcp_callable
 
 
 # =============================================================================
@@ -298,7 +299,7 @@ class TestRegistryMCPIntegration:
             mock_create.return_value = mock_callable
 
             # Mock Tool class
-            with patch("lionherd.services.types.registry.Tool") as MockTool:
+            with patch("lionherd.services.types.tool.Tool") as MockTool:
                 mock_tool_instance = Mock()
                 MockTool.return_value = mock_tool_instance
 
@@ -342,7 +343,7 @@ class TestRegistryMCPIntegration:
             mock_callable = AsyncMock(return_value="mock_result")
             mock_create.return_value = mock_callable
 
-            with patch("lionherd.services.types.registry.Tool") as MockTool:
+            with patch("lionherd.services.types.tool.Tool") as MockTool:
                 mock_tool_instance = Mock()
                 MockTool.return_value = mock_tool_instance
 
@@ -369,18 +370,23 @@ class TestRegistryMCPIntegration:
             mock_callable = AsyncMock(return_value="mock_result")
             mock_create.return_value = mock_callable
 
-            with patch("lionherd.services.types.registry.Tool") as MockTool:
-                mock_tool_instance = Mock()
-                MockTool.return_value = mock_tool_instance
+            with patch("lionherd.services.types.tool.ToolConfig") as MockToolConfig:
+                mock_config = Mock()
+                mock_config.request_options = CustomOptions
+                MockToolConfig.return_value = mock_config
 
-                await registry.register_mcp_server(
-                    server_config=server_config,
-                    tool_names=tool_names,
-                    request_options=request_options,
-                )
+                with patch("lionherd.services.types.tool.Tool") as MockTool:
+                    mock_tool_instance = Mock()
+                    MockTool.return_value = mock_tool_instance
 
-                # Verify Tool was called with request_options
-                assert MockTool.call_args.kwargs.get("request_options") == CustomOptions
+                    await registry.register_mcp_server(
+                        server_config=server_config,
+                        tool_names=tool_names,
+                        request_options=request_options,
+                    )
+
+                    # Verify ToolConfig was called with request_options
+                    assert MockToolConfig.call_args.kwargs.get("request_options") == CustomOptions
 
     async def test_register_mcp_server_tool_creation_fails(self):
         """Test register_mcp_server handles tool creation failure gracefully."""
@@ -390,7 +396,7 @@ class TestRegistryMCPIntegration:
         tool_names = ["tool1", "tool2"]
 
         with patch("lionherd.services.mcps.loader.create_mcp_callable"):
-            with patch("lionherd.services.types.registry.Tool", side_effect=Exception("Tool error")):
+            with patch("lionherd.services.types.tool.Tool", side_effect=Exception("Tool error")):
                 # Should not raise, but skip failed tools
                 registered = await registry.register_mcp_server(
                     server_config=server_config, tool_names=tool_names
@@ -421,7 +427,7 @@ class TestRegistryMCPIntegration:
                 mock_callable = AsyncMock(return_value="mock_result")
                 mock_create.return_value = mock_callable
 
-                with patch("lionherd.services.types.registry.Tool") as MockTool:
+                with patch("lionherd.services.types.tool.Tool") as MockTool:
                     with patch("lionherd_core.schema_handlers.typescript_schema"):
                         mock_tool_instance = Mock()
                         MockTool.return_value = mock_tool_instance
@@ -452,7 +458,7 @@ class TestRegistryMCPIntegration:
 
         with patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client):
             with patch("lionherd.services.mcps.loader.create_mcp_callable"):
-                with patch("lionherd.services.types.registry.Tool"):
+                with patch("lionherd.services.types.tool.Tool"):
                     registered = await registry.register_mcp_server(
                         server_config=server_config, tool_names=None, update=False
                     )
@@ -478,7 +484,7 @@ class TestRegistryMCPIntegration:
                 mock_callable = AsyncMock()
                 mock_create.return_value = mock_callable
 
-                with patch("lionherd.services.types.registry.Tool") as MockTool:
+                with patch("lionherd.services.types.tool.Tool") as MockTool:
                     # Make schema_handlers raise
                     with patch(
                         "lionherd_core.schema_handlers.typescript_schema",
@@ -495,9 +501,7 @@ class TestRegistryMCPIntegration:
                         assert len(registered) == 1
 
     async def test_create_mcp_callable_wrapper(self):
-        """Test _create_mcp_callable creates functional wrapper."""
-        registry = ServiceRegistry()
-
+        """Test create_mcp_callable creates functional wrapper."""
         # Mock client
         mock_result = Mock()
         mock_result.content = [Mock(text="test_result")]
@@ -508,7 +512,7 @@ class TestRegistryMCPIntegration:
         server_config = {"server": "test"}
 
         with patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client):
-            wrapper = registry._create_mcp_callable(server_config, "tool_name")
+            wrapper = create_mcp_callable(server_config, "tool_name")
 
             result = await wrapper(param1="value1", param2="value2")
 
@@ -518,9 +522,7 @@ class TestRegistryMCPIntegration:
             )
 
     async def test_create_mcp_callable_dict_response(self):
-        """Test _create_mcp_callable handles dict response."""
-        registry = ServiceRegistry()
-
+        """Test create_mcp_callable handles dict response."""
         mock_result = [{"type": "text", "text": "dict_result"}]
 
         mock_client = Mock()
@@ -529,16 +531,14 @@ class TestRegistryMCPIntegration:
         server_config = {"server": "test"}
 
         with patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client):
-            wrapper = registry._create_mcp_callable(server_config, "tool_name")
+            wrapper = create_mcp_callable(server_config, "tool_name")
 
             result = await wrapper(param="value")
 
             assert result == "dict_result"
 
     async def test_create_mcp_callable_fallback_response(self):
-        """Test _create_mcp_callable fallback for unknown response format."""
-        registry = ServiceRegistry()
-
+        """Test create_mcp_callable fallback for unknown response format."""
         mock_result = "raw_string_result"
 
         mock_client = Mock()
@@ -547,7 +547,7 @@ class TestRegistryMCPIntegration:
         server_config = {"server": "test"}
 
         with patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client):
-            wrapper = registry._create_mcp_callable(server_config, "tool_name")
+            wrapper = create_mcp_callable(server_config, "tool_name")
 
             result = await wrapper()
 
