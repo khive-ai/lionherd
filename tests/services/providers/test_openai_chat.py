@@ -152,7 +152,7 @@ class TestOpenAIChatEndpointCreatePayload:
         endpoint = OpenAIChatEndpoint(config=None, name="test-openai")
         request = {"messages": [{"role": "user", "content": "Hello"}]}
 
-        payload, headers = endpoint.create_payload(request)
+        payload, _headers = endpoint.create_payload(request)
 
         assert payload["model"] == "gpt-4o-mini"
         assert payload["messages"] == [{"role": "user", "content": "Hello"}]
@@ -165,7 +165,7 @@ class TestOpenAIChatEndpointCreatePayload:
             "messages": [{"role": "user", "content": "Hello"}],
         }
 
-        payload, headers = endpoint.create_payload(request)
+        payload, _headers = endpoint.create_payload(request)
 
         assert payload["model"] == "gpt-4o"
 

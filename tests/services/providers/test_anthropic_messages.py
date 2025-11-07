@@ -147,7 +147,7 @@ class TestAnthropicMessagesEndpointCreatePayload:
         endpoint = AnthropicMessagesEndpoint(config=None, name="test-anthropic")
         request = {"messages": [{"role": "user", "content": "Hello"}]}
 
-        payload, headers = endpoint.create_payload(request)
+        payload, _headers = endpoint.create_payload(request)
 
         assert payload["model"] == "claude-sonnet-4-5-20250929"
         assert payload["messages"] == [{"role": "user", "content": "Hello"}]
@@ -160,7 +160,7 @@ class TestAnthropicMessagesEndpointCreatePayload:
             "messages": [{"role": "user", "content": "Hello"}],
         }
 
-        payload, headers = endpoint.create_payload(request)
+        payload, _headers = endpoint.create_payload(request)
 
         assert payload["model"] == "claude-opus-4"
 
