@@ -866,9 +866,7 @@ async def test_registry_internal_call_when_chunk_type_but_no_hook_then_uses_stre
     registry = HookRegistry(stream_handlers={"text": handler})
 
     # _call returns only the result, not a tuple
-    result = await registry._call(
-        None, "text", "chunk_data", None, extra_param="value"
-    )
+    result = await registry._call(None, "text", "chunk_data", None, extra_param="value")
 
     assert result == "handled: chunk_data"
 
