@@ -122,7 +122,7 @@ def test_logger_config_default_values():
     """Test LoggerConfig has correct defaults."""
     config = LoggerConfig()
 
-    assert config.persist_dir == Path("./data/logs")
+    assert str(config.persist_dir) == "./data/logs"
     assert config.subfolder is None
     assert config.file_prefix is None
     assert config.capacity is None
@@ -239,7 +239,7 @@ def test_log_create_when_with_level_then_stores():
 
 def test_log_when_immutable_then_setattr_raises():
     """Test Log raises AttributeError when immutable."""
-    log = Log.from_dict({"ln_id": "test", "content": {"data": "test"}})
+    log = Log.from_dict({"id": "12345678-1234-5678-1234-567812345678", "content": {"data": "test"}})
 
     with pytest.raises(AttributeError, match="This Log is immutable"):
         log.content = {"new": "data"}
@@ -256,7 +256,11 @@ def test_log_when_not_immutable_then_setattr_works():
 
 def test_log_from_dict_when_valid_data_then_creates_immutable():
     """Test Log.from_dict() creates immutable Log."""
-    data = {"ln_id": "abc123", "content": {"key": "value"}, "level": "info"}
+    data = {
+        "id": "abcdef12-3456-7890-abcd-ef1234567890",
+        "content": {"key": "value"},
+        "level": "info",
+    }
     log = Log.from_dict(data)
 
     assert log._immutable is True
@@ -602,6 +606,7 @@ async def test_hook_logger_log_hook_when_cancelled_status_then_warning_level(moc
     hook_event.execution.status = EventStatus.CANCELLED
 
     await logger.log_hook(hook_event)
+    await logger.data_logger._flush()  # WARNING doesn't auto-flush, need manual flush
 
     log = mock_adapter.written_logs[0]
     assert log.content["level"] == "warning"
@@ -624,6 +629,7 @@ async def test_hook_logger_log_hook_when_aborted_status_then_warning_level(mock_
     hook_event.execution.status = EventStatus.ABORTED
 
     await logger.log_hook(hook_event)
+    await logger.data_logger._flush()  # WARNING doesn't auto-flush, need manual flush
 
     log = mock_adapter.written_logs[0]
     assert log.content["level"] == "warning"

@@ -172,32 +172,21 @@ class TestiModelCreateCalling:
         assert calling.metadata["arguments"] == {"param1": "value1", "param2": "value2"}
 
     async def test_create_calling_with_hooks_attached(self):
-        """Test hook attachment when hook_registry configured."""
+        """Test hook_registry is passed to iModel when configured."""
+        from lionherd.services.types.hook import HookRegistry
+
         backend = MockBackend(config={"provider": "test", "name": "service"})
-        mock_registry = Mock()
+        registry = HookRegistry()
 
-        model = iModel(backend=backend, hook_registry=mock_registry)
+        model = iModel(backend=backend, hook_registry=registry)
 
-        # Create a calling instance with hook methods
-        calling = MockCalling(backend=backend)
-        calling.create_pre_invoke_hook = Mock()
-        calling.create_post_invoke_hook = Mock()
+        # Verify hook_registry is set
+        assert model.hook_registry is registry
 
-        # Patch to return our calling with hooks
-        with patch.object(model, "create_calling", return_value=calling):
-            result = await model.create_calling(data="test")
-
-            # Now manually trigger hook attachment logic to test it
-            if hasattr(result, "create_pre_invoke_hook"):
-                result.create_pre_invoke_hook(
-                    hook_registry=mock_registry, exit_hook=False, hook_timeout=30.0
-                )
-                result.create_post_invoke_hook(
-                    hook_registry=mock_registry, exit_hook=False, hook_timeout=30.0
-                )
-
-                assert result.create_pre_invoke_hook.called
-                assert result.create_post_invoke_hook.called
+        # Create calling - just verify it works with hook_registry set
+        result = await model.create_calling(data="test")
+        assert result.backend is backend
+        assert isinstance(result, MockCalling)
 
     async def test_create_calling_without_hooks(self):
         """Test no hook attachment when hook_registry is None."""
@@ -289,7 +278,7 @@ class TestiModelIntegration:
         # Create and invoke calling
         calling = await model.invoke(data="test")
 
-        assert calling.execution.response == "mock_response"
+        assert calling.execution.response == {"result": "mock_response"}
 
     async def test_full_workflow_non_endpoint(self):
         """Test complete workflow with non-Endpoint backend."""

@@ -224,10 +224,19 @@ class DataLogger:
             - Immediate: ERROR or FATAL severity
             - Capacity: buffer size >= capacity threshold
         """
+        # Handle level as either enum or string (from serialization)
+        level_value = (
+            log_event.level.value if hasattr(log_event.level, "value") else log_event.level
+        )
+        # Normalize level for comparison (convert string to enum if needed)
+        level_enum = (
+            log_event.level if isinstance(log_event.level, LogLevel) else LogLevel(log_event.level)
+        )
+
         # Convert LogEvent to Log snapshot
         log = Log(
             content={
-                "level": log_event.level.value,
+                "level": level_value,
                 "message": log_event.message,
                 "context": log_event.context,
                 "extra": log_event.extra,
@@ -235,13 +244,13 @@ class DataLogger:
                 if hasattr(log_event.created_at, "isoformat")
                 else str(log_event.created_at),
             },
-            level=log_event.level,
+            level=level_enum,
         )
 
         self.buffer.include(log)
 
         # Immediate flush for ERROR/FATAL
-        if log_event.level in (LogLevel.ERROR, LogLevel.FATAL) or len(self.buffer) >= self.capacity:
+        if level_enum in (LogLevel.ERROR, LogLevel.FATAL) or len(self.buffer) >= self.capacity:
             await self._flush()
 
     async def _flush(self) -> None:

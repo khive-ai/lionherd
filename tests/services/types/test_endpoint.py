@@ -12,9 +12,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
+from lionherd_core.errors import ConnectionError
 from pydantic import BaseModel, SecretStr
 
-from lionherd_core.errors import ConnectionError
 from lionherd.services.types.endpoint import APICalling, Endpoint, EndpointConfig
 from lionherd.services.utilities.resilience import CircuitBreaker, RetryConfig
 
