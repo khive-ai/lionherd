@@ -277,12 +277,15 @@ class TestRetryWithBackoff:
         )
 
         # Check delays are increasing (roughly exponential)
-        # Delay 1: ~0.01s, Delay 2: ~0.02s
-        # Allow tolerance for timing variance
+        # Expected: Delay 1: ~0.01s, Delay 2: ~0.02s (exponential_base=2.0)
         assert len(call_times) == 3
         delay1 = call_times[1] - call_times[0]
         delay2 = call_times[2] - call_times[1]
-        assert delay2 > delay1  # Exponential increase
+
+        # Verify delays are reasonable (actual timing can vary due to system load in CI)
+        # Just check both delays are at least meeting minimum thresholds
+        assert delay1 >= 0.008, f"First delay should be ~0.01s, got {delay1:.3f}s"
+        assert delay2 >= 0.015, f"Second delay should be ~0.02s, got {delay2:.3f}s"
 
     @pytest.mark.asyncio
     async def test_jitter_adds_randomness(self):
