@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-mcp = ["fastmcp>=0.1.0"]
+mcp = ["fastmcp>=2.13.0"]
 
 [build-system]
 requires = ["hatchling"]
