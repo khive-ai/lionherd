@@ -35,6 +35,7 @@ filterwarnings = ["ignore::RuntimeWarning"]
 [tool.coverage.run]
 omit = [
   "src/lionherd/services/providers/*",
+  "src/lionherd/services/third_party/*",
 ]
 
 [tool.coverage.report]

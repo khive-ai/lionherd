@@ -568,7 +568,9 @@ class TestRegistryMCPIntegration:
             "server2": ["tool1", "tool2"],
         }
 
-        with patch("lionherd.services.mcps.loader.load_mcp_config", return_value=mock_result) as mock_load:
+        with patch(
+            "lionherd.services.mcps.loader.load_mcp_config", return_value=mock_result
+        ) as mock_load:
             result = await registry.load_mcp_config("/path/to/.mcp.json")
 
             # Verify delegation occurred with correct parameters
@@ -593,7 +595,9 @@ class TestRegistryMCPIntegration:
             "server3": ["tool1"],
         }
 
-        with patch("lionherd.services.mcps.loader.load_mcp_config", return_value=mock_result) as mock_load:
+        with patch(
+            "lionherd.services.mcps.loader.load_mcp_config", return_value=mock_result
+        ) as mock_load:
             result = await registry.load_mcp_config(
                 "/path/to/.mcp.json", server_names=["server1", "server3"]
             )
@@ -620,7 +624,9 @@ class TestRegistryMCPIntegration:
             "server2": [],  # Failed, empty list
         }
 
-        with patch("lionherd.services.mcps.loader.load_mcp_config", return_value=mock_result) as mock_load:
+        with patch(
+            "lionherd.services.mcps.loader.load_mcp_config", return_value=mock_result
+        ) as mock_load:
             result = await registry.load_mcp_config("/path/to/.mcp.json")
 
             # Verify delegation occurred
