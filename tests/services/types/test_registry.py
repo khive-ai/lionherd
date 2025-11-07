@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2025, HaiyangLi <quantocean.li at gmail dot com>
+# Copyright (c) 2025, HaiyangLi <quantocean.li at gmail dot com>
 # SPDX-License-Identifier: Apache-2.0
 
 """Comprehensive coverage tests for ServiceRegistry.
@@ -10,7 +10,7 @@ Coverage areas:
 - Duplicate handling: register with update=True/False
 - Discovery: list_names, list_by_tag, count, clear
 - Operators: __contains__, __len__, __repr__
-- MCP Integration: register_mcp_server, load_mcp_config, _create_mcp_callable
+- MCP Integration: register_mcp_server, load_mcp_config (delegates to loader)
 """
 
 from typing import Any
@@ -292,8 +292,8 @@ class TestRegistryMCPIntegration:
         server_config = {"server": "test_server"}
         tool_names = ["tool1", "tool2"]
 
-        # Mock _create_mcp_callable
-        with patch.object(registry, "_create_mcp_callable") as mock_create:
+        # Mock create_mcp_callable from loader
+        with patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create:
             mock_callable = AsyncMock(return_value="mock_result")
             mock_create.return_value = mock_callable
 
@@ -338,7 +338,7 @@ class TestRegistryMCPIntegration:
         tool_names = ["tool1"]
 
         # Mock _create_mcp_callable and Tool
-        with patch.object(registry, "_create_mcp_callable") as mock_create:
+        with patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create:
             mock_callable = AsyncMock(return_value="mock_result")
             mock_create.return_value = mock_callable
 
@@ -365,7 +365,7 @@ class TestRegistryMCPIntegration:
         tool_names = ["tool1"]
         request_options = {"tool1": CustomOptions}
 
-        with patch.object(registry, "_create_mcp_callable") as mock_create:
+        with patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create:
             mock_callable = AsyncMock(return_value="mock_result")
             mock_create.return_value = mock_callable
 
@@ -389,7 +389,7 @@ class TestRegistryMCPIntegration:
         server_config = {"server": "server"}
         tool_names = ["tool1", "tool2"]
 
-        with patch.object(registry, "_create_mcp_callable"):
+        with patch("lionherd.services.mcps.loader.create_mcp_callable"):
             with patch("lionherd.services.types.registry.Tool", side_effect=Exception("Tool error")):
                 # Should not raise, but skip failed tools
                 registered = await registry.register_mcp_server(
@@ -417,7 +417,7 @@ class TestRegistryMCPIntegration:
         server_config = {"command": "test", "args": []}
 
         with patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client):
-            with patch.object(registry, "_create_mcp_callable") as mock_create:
+            with patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create:
                 mock_callable = AsyncMock(return_value="mock_result")
                 mock_create.return_value = mock_callable
 
@@ -451,7 +451,7 @@ class TestRegistryMCPIntegration:
         server_config = {"command": "test", "args": []}
 
         with patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client):
-            with patch.object(registry, "_create_mcp_callable"):
+            with patch("lionherd.services.mcps.loader.create_mcp_callable"):
                 with patch("lionherd.services.types.registry.Tool"):
                     registered = await registry.register_mcp_server(
                         server_config=server_config, tool_names=None, update=False
@@ -474,7 +474,7 @@ class TestRegistryMCPIntegration:
         server_config = {"command": "test", "args": []}
 
         with patch("lionherd.services.mcps.MCPConnectionPool.get_client", return_value=mock_client):
-            with patch.object(registry, "_create_mcp_callable") as mock_create:
+            with patch("lionherd.services.mcps.loader.create_mcp_callable") as mock_create:
                 mock_callable = AsyncMock()
                 mock_create.return_value = mock_callable
 

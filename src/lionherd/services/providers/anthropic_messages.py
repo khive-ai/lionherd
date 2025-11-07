@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2025, HaiyangLi <quantocean.li at gmail dot com>
+# Copyright (c) 2025, HaiyangLi <quantocean.li at gmail dot com>
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import annotations
@@ -48,6 +48,7 @@ def create_anthropic_config(
     }
 
     from ..third_party.anthropic_models import CreateMessageRequest
+
     return EndpointConfig(
         provider="anthropic",
         base_url=base_url,

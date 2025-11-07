@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2025, HaiyangLi <quantocean.li at gmail dot com>
+# Copyright (c) 2025, HaiyangLi <quantocean.li at gmail dot com>
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import annotations
@@ -100,6 +100,8 @@ class ServiceRegistry:
     ) -> list[str]:
         """Register tools from an MCP server.
 
+        Delegates to load_mcp_tools from the loader module.
+
         Args:
             server_config: MCP server configuration (command, args, etc.)
                           Can be {"server": "name"} to reference loaded config
@@ -111,125 +113,15 @@ class ServiceRegistry:
         Returns:
             List of registered tool names
         """
-        import logging
+        from lionherd.services.mcps.loader import load_mcp_tools
 
-        from lionherd.services.mcps import MCPConnectionPool
-
-        from .imodel import iModel
-        from .tool import Tool
-
-        logger = logging.getLogger(__name__)
-        registered_tools = []
-
-        # Extract server name for qualified naming
-        server_name = None
-        if isinstance(server_config, dict) and "server" in server_config:
-            server_name = server_config["server"]
-
-        if tool_names:
-            # Register specific tools
-            for tool_name in tool_names:
-                qualified_name = f"{server_name}_{tool_name}" if server_name else tool_name
-
-                if self.has(qualified_name) and not update:
-                    raise ValueError(
-                        f"Tool '{qualified_name}' already registered. Use update=True to replace."
-                    )
-
-                tool_request_options = None
-                if request_options and tool_name in request_options:
-                    tool_request_options = request_options[tool_name]
-
-                mcp_callable = self._create_mcp_callable(server_config, tool_name)
-
-                try:
-                    tool = Tool(
-                        name=qualified_name,
-                        func_callable=mcp_callable,
-                        request_options=tool_request_options,
-                    )
-                    model = iModel(backend=tool)
-                    self.register(model, update=update)
-                    registered_tools.append(qualified_name)
-                except Exception as e:
-                    logger.warning(f"Failed to register tool {tool_name}: {e}")
-        else:
-            # Auto-discover tools from the server
-            client = await MCPConnectionPool.get_client(server_config)
-            tools = await client.list_tools()
-
-            for tool in tools:
-                qualified_name = f"{server_name}_{tool.name}" if server_name else tool.name
-
-                tool_request_options = None
-                if request_options and tool.name in request_options:
-                    tool_request_options = request_options[tool.name]
-
-                tool_schema = None
-                try:
-                    if (
-                        hasattr(tool, "inputSchema")
-                        and tool.inputSchema is not None
-                        and isinstance(tool.inputSchema, dict)
-                    ):
-                        from lionherd_core import schema_handlers
-
-                        tool_schema = schema_handlers.typescript_schema(tool.inputSchema)
-                except Exception as schema_error:
-                    logger.warning(f"Could not extract schema for {tool.name}: {schema_error}")
-                    tool_schema = None
-
-                try:
-                    mcp_callable = self._create_mcp_callable(server_config, tool.name)
-
-                    if self.has(qualified_name) and not update:
-                        logger.warning(f"Tool '{qualified_name}' already registered. Skipping.")
-                        continue
-
-                    tool_obj = Tool(
-                        name=qualified_name,
-                        func_callable=mcp_callable,
-                        tool_schema=tool_schema,
-                        request_options=tool_request_options,
-                    )
-                    model = iModel(backend=tool_obj)
-                    self.register(model, update=update)
-                    registered_tools.append(qualified_name)
-                except Exception as e:
-                    logger.warning(f"Failed to register tool {tool.name}: {e}")
-
-        return registered_tools
-
-    @staticmethod
-    def _create_mcp_callable(server_config: dict, tool_name: str):
-        """Create async callable that wraps MCP tool execution."""
-        from typing import Any
-
-        from lionherd.services.mcps import MCPConnectionPool
-
-        async def mcp_wrapper(**kwargs: Any) -> Any:
-            client = await MCPConnectionPool.get_client(server_config)
-            result = await client.call_tool(tool_name, kwargs)
-
-            # Extract content from FastMCP response
-            if hasattr(result, "content"):
-                content = result.content
-                if isinstance(content, list) and len(content) == 1:
-                    item = content[0]
-                    if hasattr(item, "text"):
-                        return item.text
-                    elif isinstance(item, dict) and item.get("type") == "text":
-                        return item.get("text", "")
-                return content
-            elif isinstance(result, list) and len(result) == 1:
-                item = result[0]
-                if isinstance(item, dict) and item.get("type") == "text":
-                    return item.get("text", "")
-
-            return result
-
-        mcp_wrapper.__name__ = tool_name
-        return mcp_wrapper
+        return await load_mcp_tools(
+            registry=self,
+            server_config=server_config,
+            tool_names=tool_names,
+            request_options=request_options,
+            update=update,
+        )
 
     async def load_mcp_config(
         self,

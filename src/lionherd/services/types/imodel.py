@@ -135,7 +135,7 @@ class iModel(Element):  # noqa: N801
 
 
 # Import TokenBucket at runtime for Pydantic model rebuild
-from ..utilities.rate_limiter import TokenBucket  # noqa: E402, F401
+from ..utilities.rate_limiter import TokenBucket
 
 # Rebuild model now that TokenBucket is available
 iModel.model_rebuild()

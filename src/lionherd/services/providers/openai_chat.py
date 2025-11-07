@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2025, HaiyangLi <quantocean.li at gmail dot com>
+# Copyright (c) 2025, HaiyangLi <quantocean.li at gmail dot com>
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import annotations
@@ -76,9 +76,10 @@ class OpenAIChatEndpoint(Endpoint):
         """Initialize with OpenAI config."""
         if config is None:
             config = create_openai_config(**kwargs)
-        
+
         if config.request_options is None:
             from ..third_party.openai_models import OpenAIChatCompletionsRequest
+
             config.request_options = OpenAIChatCompletionsRequest
 
         super().__init__(config=config, circuit_breaker=circuit_breaker)
