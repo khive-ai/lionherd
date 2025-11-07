@@ -132,3 +132,10 @@ class iModel(Element):  # noqa: N801
     def __repr__(self) -> str:
         """String representation."""
         return f"iModel(backend={self.backend.name}, version={self.backend.version})"
+
+
+# Import TokenBucket at runtime for Pydantic model rebuild
+from ..utilities.rate_limiter import TokenBucket  # noqa: E402, F401
+
+# Rebuild model now that TokenBucket is available
+iModel.model_rebuild()

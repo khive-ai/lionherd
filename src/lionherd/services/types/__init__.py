@@ -23,6 +23,7 @@ from .log import (
     LogLevel,
     PersistenceAdapter,
 )
+from .registry import ServiceRegistry
 from .tool import Tool, ToolCalling, ToolConfig
 
 __all__ = (
@@ -44,6 +45,7 @@ __all__ = (
     "PersistenceAdapter",
     "ServiceBackend",
     "ServiceConfig",
+    "ServiceRegistry",
     "Tool",
     "ToolCalling",
     "ToolConfig",
