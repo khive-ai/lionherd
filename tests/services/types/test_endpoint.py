@@ -135,18 +135,40 @@ class TestEndpointConfig:
         )
         assert config.request_options == SimpleRequest
 
+    def test_validate_request_options_dict_with_schema_gen(self):
+        """Test request_options with dict when schema-gen IS installed."""
+        schema = {
+            "type": "object",
+            "properties": {"message": {"type": "string"}, "temperature": {"type": "number"}},
+            "required": ["message"],
+        }
+        config = EndpointConfig(
+            name="test",
+            provider="test",
+            endpoint="/test",
+            request_options=schema,
+        )
+        # Should successfully create a Pydantic model from schema
+        assert config.request_options is not None
+        assert issubclass(config.request_options, BaseModel)
+
     def test_validate_request_options_dict_no_schema_gen(self):
-        """Test request_options with dict when schema-gen not installed."""
-        with patch("lionherd.services.types.endpoint.logger") as mock_logger:
+        """Test request_options with dict when schema-gen NOT installed."""
+        # Mock the import to raise ImportError
+        with (
+            patch.dict(sys.modules, {"lionherd_core.libs.schema_handlers": None}),
+            patch("lionherd.services.types.endpoint.logger") as mock_logger,
+        ):
             config = EndpointConfig(
                 name="test",
                 provider="test",
                 endpoint="/test",
                 request_options={"type": "object", "properties": {}},
             )
-            # Should log warning and return None
+            # Should log warning and return None (graceful degradation)
             assert config.request_options is None
             mock_logger.warning.assert_called_once()
+            assert "datamodel-code-generator not installed" in str(mock_logger.warning.call_args)
 
     def test_full_url_without_endpoint_params(self):
         """Test full_url property without endpoint params."""
