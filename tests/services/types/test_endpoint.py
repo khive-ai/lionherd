@@ -139,11 +139,8 @@ class TestEndpointConfig:
         """Test request_options with dict when schema-gen IS installed."""
         schema = {
             "type": "object",
-            "properties": {
-                "message": {"type": "string"},
-                "temperature": {"type": "number"}
-            },
-            "required": ["message"]
+            "properties": {"message": {"type": "string"}, "temperature": {"type": "number"}},
+            "required": ["message"],
         }
         config = EndpointConfig(
             name="test",
@@ -171,9 +168,7 @@ class TestEndpointConfig:
             # Should log warning and return None (graceful degradation)
             assert config.request_options is None
             mock_logger.warning.assert_called_once()
-            assert "datamodel-code-generator not installed" in str(
-                mock_logger.warning.call_args
-            )
+            assert "datamodel-code-generator not installed" in str(mock_logger.warning.call_args)
 
     def test_full_url_without_endpoint_params(self):
         """Test full_url property without endpoint params."""
