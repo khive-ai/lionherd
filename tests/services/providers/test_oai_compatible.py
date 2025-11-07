@@ -20,55 +20,128 @@ from lionherd.services.providers.oai_compatible import (
 )
 from lionherd.services.types.endpoint import EndpointConfig
 
+# =============================================================================
+# Parametrized Provider Configurations
+# =============================================================================
+
+
+@pytest.fixture(
+    params=[
+        pytest.param(
+            {
+                "name": "groq",
+                "factory": create_groq_config,
+                "endpoint_class": GroqChatEndpoint,
+                "provider": "groq",
+                "base_url": "https://api.groq.com/openai/v1",
+                "endpoint": "chat/completions",
+                "api_key_env": "GROQ_API_KEY",
+                "default_model": "llama-3.3-70b-versatile",
+                "excluded_params": {"reasoning_effort"},
+                "example_response": {
+                    "id": "chatcmpl-123",
+                    "model": "llama-3.3-70b-versatile",
+                    "choices": [
+                        {"message": {"content": "Hello from Groq!"}, "finish_reason": "stop"}
+                    ],
+                    "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+                },
+                "response_text": "Hello from Groq!",
+            },
+            id="groq",
+        ),
+        pytest.param(
+            {
+                "name": "openrouter",
+                "factory": create_openrouter_config,
+                "endpoint_class": OpenRouterChatEndpoint,
+                "provider": "openrouter",
+                "base_url": "https://openrouter.ai/api/v1",
+                "endpoint": "chat/completions",
+                "api_key_env": "OPENROUTER_API_KEY",
+                "default_model": "google/gemini-2.0-flash-exp:free",
+                "excluded_params": set(),
+                "example_response": {
+                    "id": "gen-123",
+                    "model": "google/gemini-2.0-flash-exp:free",
+                    "choices": [
+                        {"message": {"content": "Hello from OpenRouter!"}, "finish_reason": "stop"}
+                    ],
+                    "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+                },
+                "response_text": "Hello from OpenRouter!",
+            },
+            id="openrouter",
+        ),
+        pytest.param(
+            {
+                "name": "nvidia_nim",
+                "factory": create_nvidia_nim_config,
+                "endpoint_class": NvidiaNimChatEndpoint,
+                "provider": "nvidia_nim",
+                "base_url": "https://integrate.api.nvidia.com/v1",
+                "endpoint": "chat/completions",
+                "api_key_env": "NVIDIA_NIM_API_KEY",
+                "default_model": "meta/llama-3.1-8b-instruct",
+                "excluded_params": set(),
+                "example_response": {
+                    "id": "cmpl-123",
+                    "model": "meta/llama-3.1-8b-instruct",
+                    "choices": [
+                        {"message": {"content": "Hello from NVIDIA!"}, "finish_reason": "stop"}
+                    ],
+                    "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+                },
+                "response_text": "Hello from NVIDIA!",
+            },
+            id="nvidia_nim",
+        ),
+    ]
+)
+def provider_config(request):
+    """Parametrized fixture providing all OAI-compatible provider configurations."""
+    return request.param
+
 
 # =============================================================================
-# Groq Tests
+# Parametrized Factory Tests
 # =============================================================================
 
 
-class TestCreateGroqConfig:
-    """Test create_groq_config factory function."""
+class TestCreateConfigFactories:
+    """Test create_*_config factory functions for all OAI-compatible providers."""
 
-    def test_create_groq_config_defaults(self):
+    def test_factory_defaults(self, provider_config):
         """Test factory with default values."""
-        config = create_groq_config(name="test-groq")
+        config = provider_config["factory"](name=f"test-{provider_config['name']}")
 
-        assert config.provider == "groq"
-        assert config.base_url == "https://api.groq.com/openai/v1"
-        assert config.endpoint == "chat/completions"
-        assert config.api_key == "GROQ_API_KEY"
-        assert config.kwargs["default_model"] == "llama-3.3-70b-versatile"
-        # Should auto-add reasoning_effort to excluded_params
-        assert "reasoning_effort" in config.kwargs["excluded_params"]
+        assert config.provider == provider_config["provider"]
+        assert config.base_url == provider_config["base_url"]
+        assert config.endpoint == provider_config["endpoint"]
+        assert config.api_key == provider_config["api_key_env"]
+        assert config.kwargs["default_model"] == provider_config["default_model"]
+        assert config.kwargs["excluded_params"] == provider_config["excluded_params"]
 
-    def test_create_groq_config_custom_values(self):
+    def test_factory_custom_values(self, provider_config):
         """Test factory with custom values."""
-        config = create_groq_config(name="test-groq",
+        config = provider_config["factory"](
+            name=f"test-{provider_config['name']}",
             api_key="custom_key",
             base_url="https://custom.api.com",
             endpoint="custom/endpoint",
-            default_model="mixtral-8x7b-32768",
+            default_model="custom-model",
         )
 
-        assert config.provider == "groq"
+        assert config.provider == provider_config["provider"]
         assert config.base_url == "https://custom.api.com"
         assert config.endpoint == "custom/endpoint"
         assert config.api_key == "custom_key"
-        assert config.kwargs["default_model"] == "mixtral-8x7b-32768"
+        assert config.kwargs["default_model"] == "custom-model"
 
-    def test_create_groq_config_auto_excludes_reasoning_effort(self):
-        """Test factory automatically excludes reasoning_effort."""
-        config = create_groq_config(name="test-default", excluded_params=None)
-        assert config.kwargs["excluded_params"] == {"reasoning_effort"}
-
-    def test_create_groq_config_merges_excluded_params(self):
-        """Test factory merges excluded_params with reasoning_effort."""
-        config = create_groq_config(name="test-default", excluded_params={"custom_param"})
-        assert config.kwargs["excluded_params"] == {"reasoning_effort", "custom_param"}
-
-    def test_create_groq_config_extra_kwargs(self):
+    def test_factory_extra_kwargs(self, provider_config):
         """Test factory passes extra kwargs to config."""
-        config = create_groq_config(name="test-groq",
+        config = provider_config["factory"](
+            name=f"test-{provider_config['name']}",
             custom_field="custom_value",
             another_field=123,
         )
@@ -76,79 +149,86 @@ class TestCreateGroqConfig:
         assert config.kwargs["another_field"] == 123
 
 
-class TestGroqChatEndpoint:
-    """Test GroqChatEndpoint class."""
+# =============================================================================
+# Parametrized Endpoint Tests
+# =============================================================================
 
-    def test_init_with_none_config(self):
-        """Test initialization with config=None uses Groq defaults."""
-        endpoint = GroqChatEndpoint(config=None, name="test-groq")
 
-        assert endpoint.config.provider == "groq"
-        assert endpoint.config.base_url == "https://api.groq.com/openai/v1"
-        assert endpoint.config.kwargs["default_model"] == "llama-3.3-70b-versatile"
-        assert "reasoning_effort" in endpoint.config.kwargs["excluded_params"]
+class TestOAICompatibleEndpoints:
+    """Test OAI-compatible endpoint classes (Groq, OpenRouter, NVIDIA NIM)."""
 
-    def test_init_with_dict_config(self):
-        """Test initialization with dict config."""
-        config_dict = {
-            "name": "test-groq",
-            "provider": "groq",
-            "base_url": "https://api.groq.com/openai/v1",
-            "endpoint": "chat/completions",
-            "api_key": "test_key",
-        }
-        endpoint = GroqChatEndpoint(config=config_dict)
-
-        assert endpoint.config.provider == "groq"
-        assert endpoint.config.api_key == "test_key"
-
-    def test_init_with_endpoint_config(self):
-        """Test initialization with EndpointConfig instance."""
-        config = create_groq_config(name="test-default", api_key="test_key")
-        endpoint = GroqChatEndpoint(config=config)
-
-        assert endpoint.config.provider == "groq"
-        assert endpoint.config.api_key == "test_key"
-
-    def test_init_with_kwargs_override(self):
-        """Test initialization with kwargs overrides."""
-        endpoint = GroqChatEndpoint(
-            config=None,
-            name="test-groq",
-            default_model="mixtral-8x7b-32768",
+    def test_init_with_none_config(self, provider_config):
+        """Test initialization with config=None uses provider defaults."""
+        endpoint = provider_config["endpoint_class"](
+            config=None, name=f"test-{provider_config['name']}"
         )
 
-        assert endpoint.config.kwargs["default_model"] == "mixtral-8x7b-32768"
+        assert endpoint.config.provider == provider_config["provider"]
+        assert endpoint.config.base_url == provider_config["base_url"]
+        assert endpoint.config.kwargs["default_model"] == provider_config["default_model"]
 
-    def test_init_with_circuit_breaker(self):
+    def test_init_with_dict_config(self, provider_config):
+        """Test initialization with dict config."""
+        config_dict = {
+            "name": f"test-{provider_config['name']}",
+            "provider": provider_config["provider"],
+            "base_url": provider_config["base_url"],
+            "endpoint": provider_config["endpoint"],
+            "api_key": "test_key",
+        }
+        endpoint = provider_config["endpoint_class"](config=config_dict)
+
+        assert endpoint.config.provider == provider_config["provider"]
+        assert endpoint.config.api_key == "test_key"
+
+    def test_init_with_endpoint_config(self, provider_config):
+        """Test initialization with EndpointConfig instance."""
+        config = provider_config["factory"](name="test-default", api_key="test_key")
+        endpoint = provider_config["endpoint_class"](config=config)
+
+        assert endpoint.config.provider == provider_config["provider"]
+        assert endpoint.config.api_key == "test_key"
+
+    def test_init_with_kwargs_override(self, provider_config):
+        """Test initialization with kwargs overrides."""
+        endpoint = provider_config["endpoint_class"](
+            config=None,
+            name=f"test-{provider_config['name']}",
+            default_model="custom-model",
+        )
+
+        assert endpoint.config.kwargs["default_model"] == "custom-model"
+
+    def test_init_with_circuit_breaker(self, provider_config):
         """Test initialization with circuit breaker."""
         from lionherd.services.utilities.resilience import CircuitBreaker
 
         cb = CircuitBreaker(failure_threshold=3, recovery_time=1.0)
-        endpoint = GroqChatEndpoint(config=None, name="test-default", circuit_breaker=cb)
+        endpoint = provider_config["endpoint_class"](
+            config=None, name="test-default", circuit_breaker=cb
+        )
 
         assert endpoint.circuit_breaker is not None
 
-    def test_inherits_from_openai_chat(self):
-        """Test GroqChatEndpoint inherits from OpenAIChatEndpoint."""
+    def test_inherits_from_openai_chat(self, provider_config):
+        """Test endpoint inherits from OpenAIChatEndpoint."""
         from lionherd.services.providers.openai_chat import OpenAIChatEndpoint
 
-        endpoint = GroqChatEndpoint(config=None, name="test-groq")
+        endpoint = provider_config["endpoint_class"](
+            config=None, name=f"test-{provider_config['name']}"
+        )
         assert isinstance(endpoint, OpenAIChatEndpoint)
 
     @pytest.mark.asyncio
-    async def test_call_success(self):
+    async def test_call_success(self, provider_config):
         """Test successful API call."""
-        endpoint = GroqChatEndpoint(config=None, name="test-default", api_key="test_key")
+        endpoint = provider_config["endpoint_class"](
+            config=None, name="test-default", api_key="test_key"
+        )
 
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "id": "chatcmpl-123",
-            "model": "llama-3.3-70b-versatile",
-            "choices": [{"message": {"content": "Hello from Groq!"}, "finish_reason": "stop"}],
-            "usage": {"prompt_tokens": 10, "completion_tokens": 5},
-        }
+        mock_response.json.return_value = provider_config["example_response"]
 
         mock_client = MagicMock()
         mock_client.request = AsyncMock(return_value=mock_response)
@@ -160,8 +240,27 @@ class TestGroqChatEndpoint:
                 request={"messages": [{"role": "user", "content": "Hello"}]}
             )
 
-        assert result.data == "Hello from Groq!"
-        assert result.metadata["model"] == "llama-3.3-70b-versatile"
+        assert result.data == provider_config["response_text"]
+        assert result.metadata["model"] == provider_config["example_response"]["model"]
+
+
+# =============================================================================
+# Provider-Specific Tests
+# =============================================================================
+
+
+class TestGroqSpecificFeatures:
+    """Test Groq-specific features (reasoning_effort exclusion)."""
+
+    def test_create_groq_config_auto_excludes_reasoning_effort(self):
+        """Test factory automatically excludes reasoning_effort."""
+        config = create_groq_config(name="test-default", excluded_params=None)
+        assert config.kwargs["excluded_params"] == {"reasoning_effort"}
+
+    def test_create_groq_config_merges_excluded_params(self):
+        """Test factory merges excluded_params with reasoning_effort."""
+        config = create_groq_config(name="test-default", excluded_params={"custom_param"})
+        assert config.kwargs["excluded_params"] == {"reasoning_effort", "custom_param"}
 
     @pytest.mark.asyncio
     async def test_call_excludes_reasoning_effort(self):
@@ -191,133 +290,20 @@ class TestGroqChatEndpoint:
         assert "reasoning_effort" not in payload
 
 
-# =============================================================================
-# OpenRouter Tests
-# =============================================================================
-
-
-class TestCreateOpenRouterConfig:
-    """Test create_openrouter_config factory function."""
-
-    def test_create_openrouter_config_defaults(self):
-        """Test factory with default values."""
-        config = create_openrouter_config(name="test-openrouter")
-
-        assert config.provider == "openrouter"
-        assert config.base_url == "https://openrouter.ai/api/v1"
-        assert config.endpoint == "chat/completions"
-        assert config.api_key == "OPENROUTER_API_KEY"
-        assert config.kwargs["default_model"] == "google/gemini-2.0-flash-exp:free"
-        assert config.kwargs["excluded_params"] == set()
-
-    def test_create_openrouter_config_custom_values(self):
-        """Test factory with custom values."""
-        config = create_openrouter_config(name="test-openrouter",
-            api_key="custom_key",
-            base_url="https://custom.api.com",
-            endpoint="custom/endpoint",
-            default_model="anthropic/claude-sonnet-4",
-            excluded_params={"custom_param"},
-        )
-
-        assert config.provider == "openrouter"
-        assert config.base_url == "https://custom.api.com"
-        assert config.endpoint == "custom/endpoint"
-        assert config.api_key == "custom_key"
-        assert config.kwargs["default_model"] == "anthropic/claude-sonnet-4"
-        assert config.kwargs["excluded_params"] == {"custom_param"}
+class TestOpenRouterSpecificFeatures:
+    """Test OpenRouter-specific features (HTTP-Referer, X-Title)."""
 
     def test_create_openrouter_config_http_referer(self):
         """Test factory with HTTP-Referer in kwargs."""
-        config = create_openrouter_config(name="test-openrouter", **{"HTTP-Referer": "https://myapp.com"})
+        config = create_openrouter_config(
+            name="test-openrouter", **{"HTTP-Referer": "https://myapp.com"}
+        )
         assert config.kwargs["HTTP-Referer"] == "https://myapp.com"
 
     def test_create_openrouter_config_x_title(self):
         """Test factory with X-Title in kwargs."""
         config = create_openrouter_config(name="test-openrouter", **{"X-Title": "MyApp"})
         assert config.kwargs["X-Title"] == "MyApp"
-
-
-class TestOpenRouterChatEndpoint:
-    """Test OpenRouterChatEndpoint class."""
-
-    def test_init_with_none_config(self):
-        """Test initialization with config=None uses OpenRouter defaults."""
-        endpoint = OpenRouterChatEndpoint(config=None, name="test-openrouter")
-
-        assert endpoint.config.provider == "openrouter"
-        assert endpoint.config.base_url == "https://openrouter.ai/api/v1"
-        assert endpoint.config.kwargs["default_model"] == "google/gemini-2.0-flash-exp:free"
-
-    def test_init_with_dict_config(self):
-        """Test initialization with dict config."""
-        config_dict = {
-            "name": "test-openrouter",
-            "provider": "openrouter",
-            "base_url": "https://openrouter.ai/api/v1",
-            "endpoint": "chat/completions",
-            "api_key": "test_key",
-        }
-        endpoint = OpenRouterChatEndpoint(config=config_dict)
-
-        assert endpoint.config.provider == "openrouter"
-        assert endpoint.config.api_key == "test_key"
-
-    def test_init_with_endpoint_config(self):
-        """Test initialization with EndpointConfig instance."""
-        config = create_openrouter_config(name="test-default", api_key="test_key")
-        endpoint = OpenRouterChatEndpoint(config=config)
-
-        assert endpoint.config.provider == "openrouter"
-        assert endpoint.config.api_key == "test_key"
-
-    def test_init_with_kwargs_override(self):
-        """Test initialization with kwargs overrides."""
-        endpoint = OpenRouterChatEndpoint(
-            config=None,
-            name="test-openrouter",
-            default_model="openai/gpt-4o",
-            **{"HTTP-Referer": "https://myapp.com"},
-        )
-
-        assert endpoint.config.kwargs["default_model"] == "openai/gpt-4o"
-        assert endpoint.config.kwargs["HTTP-Referer"] == "https://myapp.com"
-
-    def test_inherits_from_openai_chat(self):
-        """Test OpenRouterChatEndpoint inherits from OpenAIChatEndpoint."""
-        from lionherd.services.providers.openai_chat import OpenAIChatEndpoint
-
-        endpoint = OpenRouterChatEndpoint(config=None, name="test-openrouter")
-        assert isinstance(endpoint, OpenAIChatEndpoint)
-
-    @pytest.mark.asyncio
-    async def test_call_success(self):
-        """Test successful API call."""
-        endpoint = OpenRouterChatEndpoint(config=None, name="test-default", api_key="test_key")
-
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "id": "gen-123",
-            "model": "google/gemini-2.0-flash-exp:free",
-            "choices": [
-                {"message": {"content": "Hello from OpenRouter!"}, "finish_reason": "stop"}
-            ],
-            "usage": {"prompt_tokens": 10, "completion_tokens": 5},
-        }
-
-        mock_client = MagicMock()
-        mock_client.request = AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-
-        with patch.object(endpoint, "_create_http_client", return_value=mock_client):
-            result = await endpoint.call(
-                request={"messages": [{"role": "user", "content": "Hello"}]}
-            )
-
-        assert result.data == "Hello from OpenRouter!"
-        assert result.metadata["model"] == "google/gemini-2.0-flash-exp:free"
 
     @pytest.mark.asyncio
     async def test_call_with_http_referer(self):
@@ -348,130 +334,8 @@ class TestOpenRouterChatEndpoint:
         assert payload.get("HTTP-Referer") == "https://myapp.com"
 
 
-# =============================================================================
-# NVIDIA NIM Tests
-# =============================================================================
-
-
-class TestCreateNvidiaNimConfig:
-    """Test create_nvidia_nim_config factory function."""
-
-    def test_create_nvidia_nim_config_defaults(self):
-        """Test factory with default values."""
-        config = create_nvidia_nim_config(name="test-nvidia")
-
-        assert config.provider == "nvidia_nim"
-        assert config.base_url == "https://integrate.api.nvidia.com/v1"
-        assert config.endpoint == "chat/completions"
-        assert config.api_key == "NVIDIA_NIM_API_KEY"
-        assert config.kwargs["default_model"] == "meta/llama-3.1-8b-instruct"
-        assert config.kwargs["excluded_params"] == set()
-
-    def test_create_nvidia_nim_config_custom_values(self):
-        """Test factory with custom values."""
-        config = create_nvidia_nim_config(name="test-nvidia",
-            api_key="custom_key",
-            base_url="https://custom.api.com",
-            endpoint="custom/endpoint",
-            default_model="meta/llama-3.1-70b-instruct",
-            excluded_params={"custom_param"},
-        )
-
-        assert config.provider == "nvidia_nim"
-        assert config.base_url == "https://custom.api.com"
-        assert config.endpoint == "custom/endpoint"
-        assert config.api_key == "custom_key"
-        assert config.kwargs["default_model"] == "meta/llama-3.1-70b-instruct"
-        assert config.kwargs["excluded_params"] == {"custom_param"}
-
-    def test_create_nvidia_nim_config_extra_kwargs(self):
-        """Test factory passes extra kwargs to config."""
-        config = create_nvidia_nim_config(name="test-nvidia",
-            custom_field="custom_value",
-            another_field=123,
-        )
-        assert config.kwargs["custom_field"] == "custom_value"
-        assert config.kwargs["another_field"] == 123
-
-
-class TestNvidiaNimChatEndpoint:
-    """Test NvidiaNimChatEndpoint class."""
-
-    def test_init_with_none_config(self):
-        """Test initialization with config=None uses NVIDIA NIM defaults."""
-        endpoint = NvidiaNimChatEndpoint(config=None, name="test-nvidia")
-
-        assert endpoint.config.provider == "nvidia_nim"
-        assert endpoint.config.base_url == "https://integrate.api.nvidia.com/v1"
-        assert endpoint.config.kwargs["default_model"] == "meta/llama-3.1-8b-instruct"
-
-    def test_init_with_dict_config(self):
-        """Test initialization with dict config."""
-        config_dict = {
-            "name": "test-nvidia",
-            "provider": "nvidia_nim",
-            "base_url": "https://integrate.api.nvidia.com/v1",
-            "endpoint": "chat/completions",
-            "api_key": "test_key",
-        }
-        endpoint = NvidiaNimChatEndpoint(config=config_dict)
-
-        assert endpoint.config.provider == "nvidia_nim"
-        assert endpoint.config.api_key == "test_key"
-
-    def test_init_with_endpoint_config(self):
-        """Test initialization with EndpointConfig instance."""
-        config = create_nvidia_nim_config(name="test-default", api_key="test_key")
-        endpoint = NvidiaNimChatEndpoint(config=config)
-
-        assert endpoint.config.provider == "nvidia_nim"
-        assert endpoint.config.api_key == "test_key"
-
-    def test_init_with_kwargs_override(self):
-        """Test initialization with kwargs overrides."""
-        endpoint = NvidiaNimChatEndpoint(
-            config=None,
-            name="test-nvidia",
-            default_model="mistralai/mixtral-8x7b-instruct-v0.1",
-        )
-
-        assert endpoint.config.kwargs["default_model"] == "mistralai/mixtral-8x7b-instruct-v0.1"
-
-    def test_inherits_from_openai_chat(self):
-        """Test NvidiaNimChatEndpoint inherits from OpenAIChatEndpoint."""
-        from lionherd.services.providers.openai_chat import OpenAIChatEndpoint
-
-        endpoint = NvidiaNimChatEndpoint(config=None, name="test-nvidia")
-        assert isinstance(endpoint, OpenAIChatEndpoint)
-
-    @pytest.mark.asyncio
-    async def test_call_success(self):
-        """Test successful API call."""
-        endpoint = NvidiaNimChatEndpoint(config=None, name="test-default", api_key="test_key")
-
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "id": "cmpl-123",
-            "model": "meta/llama-3.1-8b-instruct",
-            "choices": [
-                {"message": {"content": "Hello from NVIDIA!"}, "finish_reason": "stop"}
-            ],
-            "usage": {"prompt_tokens": 10, "completion_tokens": 5},
-        }
-
-        mock_client = MagicMock()
-        mock_client.request = AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = AsyncMock(return_value=None)
-
-        with patch.object(endpoint, "_create_http_client", return_value=mock_client):
-            result = await endpoint.call(
-                request={"messages": [{"role": "user", "content": "Hello"}]}
-            )
-
-        assert result.data == "Hello from NVIDIA!"
-        assert result.metadata["model"] == "meta/llama-3.1-8b-instruct"
+class TestNvidaNimSpecificFeatures:
+    """Test NVIDIA NIM-specific features (error handling)."""
 
     @pytest.mark.asyncio
     async def test_call_http_error(self):
