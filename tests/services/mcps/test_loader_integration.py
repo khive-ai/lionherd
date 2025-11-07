@@ -57,7 +57,9 @@ async def test_load_mcp_tools_with_fetch_server_auto_discovery(registry, fetch_s
     """
     # Auto-discover tools from fetch server (can take a few seconds)
     registered_tools = await load_mcp_tools(
-        registry=registry, server_config=fetch_server_config, tool_names=None  # Auto-discover all tools
+        registry=registry,
+        server_config=fetch_server_config,
+        tool_names=None,  # Auto-discover all tools
     )
 
     # Verify fetch tool was discovered and registered
@@ -130,8 +132,12 @@ async def test_fetch_tool_invocation_real_url(registry, fetch_server_config):
 
     # Verify actual content from MCP docs page
     response_text = str(response)
-    assert "Model Context Protocol" in response_text, "Response should contain 'Model Context Protocol' from MCP docs"
-    assert "open-source standard" in response_text, "Response should contain 'open-source standard' from MCP docs"
+    assert "Model Context Protocol" in response_text, (
+        "Response should contain 'Model Context Protocol' from MCP docs"
+    )
+    assert "open-source standard" in response_text, (
+        "Response should contain 'open-source standard' from MCP docs"
+    )
 
 
 @pytest.mark.asyncio
@@ -154,7 +160,9 @@ async def test_fetch_server_multiple_urls(registry, fetch_server_config):
     assert fetch_model is not None, "fetch tool should be registered"
 
     # Fetch from two different MCP doc pages
-    result1 = await fetch_model.invoke(url="https://modelcontextprotocol.io/docs/getting-started/intro")
+    result1 = await fetch_model.invoke(
+        url="https://modelcontextprotocol.io/docs/getting-started/intro"
+    )
     result2 = await fetch_model.invoke(url="https://modelcontextprotocol.io/docs/core-features")
 
     assert result1 is not None and result2 is not None, "Both fetches should succeed"
@@ -168,7 +176,9 @@ async def test_fetch_server_multiple_urls(registry, fetch_server_config):
     response2_text = str(result2.execution.response)
 
     # First fetch from /intro should contain MCP documentation content
-    assert "Model Context Protocol" in response1_text, "First fetch should contain 'Model Context Protocol'"
+    assert "Model Context Protocol" in response1_text, (
+        "First fetch should contain 'Model Context Protocol'"
+    )
 
     # Second fetch from /core-features should contain different content
     assert len(response2_text) > 100, "Second fetch should contain substantial content"
