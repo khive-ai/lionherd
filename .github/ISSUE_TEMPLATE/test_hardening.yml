@@ -1,0 +1,103 @@
+name: Test Hardening
+description: Improve test coverage for a specific module or component
+title: "test: "
+labels: ["testing", "test-hardening"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to track test coverage improvements for specific components.
+
+  - type: input
+    id: module
+    attributes:
+      label: Target Module
+      description: Full path to the module needing tests
+      placeholder: "src/lionherd/services/providers/anthropic_messages.py"
+    validations:
+      required: true
+
+  - type: input
+    id: current_coverage
+    attributes:
+      label: Current Coverage
+      description: Current test coverage percentage
+      placeholder: "0%"
+    validations:
+      required: true
+
+  - type: input
+    id: target_coverage
+    attributes:
+      label: Target Coverage
+      description: Target coverage percentage
+      placeholder: "70%"
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What needs to be tested?
+      placeholder: |
+        - Factory function: create_anthropic_config
+        - Endpoint initialization
+        - Request/response normalization
+        - Error handling
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: When is this task complete?
+      placeholder: |
+        - [ ] Test file created: tests/services/providers/test_anthropic_messages.py
+        - [ ] Coverage >= 70%
+        - [ ] All functions have test cases
+        - [ ] Edge cases covered
+        - [ ] Integration tests for API calls (mocked)
+    validations:
+      required: true
+
+  - type: input
+    id: loc
+    attributes:
+      label: Lines of Code
+      description: Approximate LOC in target module
+      placeholder: "197"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How urgent is this?
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Complexity
+      description: How complex is the testing task?
+      options:
+        - Low (data classes, simple functions)
+        - Medium (business logic, some mocking)
+        - High (complex logic, extensive mocking)
+        - Critical (external APIs, stateful systems)
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Dependencies, related issues, or special considerations
+      placeholder: Requires mocking httpx, uses Anthropic API models
