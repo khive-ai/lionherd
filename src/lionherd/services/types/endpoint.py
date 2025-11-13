@@ -93,9 +93,9 @@ class EndpointConfig(ServiceConfig):
                 return v.__class__
             if isinstance(v, dict | str):
                 try:
-                    from lionherd_core.libs.schema_handlers import load_pydantic_model_from_schema
+                    from lionherd_core import schema_handlers
 
-                    return load_pydantic_model_from_schema(v)
+                    return schema_handlers.load_pydantic_model_from_schema(v)
                 except ImportError:
                     logger.warning(
                         "datamodel-code-generator not installed. "

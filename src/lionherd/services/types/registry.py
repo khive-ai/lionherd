@@ -64,7 +64,7 @@ class ServiceRegistry:
 
     def list_by_tag(self, tag: str) -> list[str]:
         """List services with specific tag."""
-        return [model.name for model in self._pile.items.values() if tag in model.tags]
+        return [model.name for _, model in self._pile if tag in model.tags]
 
     def count(self) -> int:
         """Count registered services."""

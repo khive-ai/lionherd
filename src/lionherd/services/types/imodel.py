@@ -5,8 +5,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from lionherd_core import Element
-from lionherd_core.protocols import Deserializable, Hashable, Observable, Serializable, implements
+from lionherd_core import Element, Invocable, implements
 from pydantic import Field
 
 if TYPE_CHECKING:
@@ -20,7 +19,7 @@ from .endpoint import Endpoint
 __all__ = ("iModel",)
 
 
-@implements(Observable, Serializable, Deserializable, Hashable)
+@implements(Invocable)
 class iModel(Element):  # noqa: N801
     """Interface wrapper for ServiceBackend with unified invocation API.
 
