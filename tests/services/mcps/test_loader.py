@@ -19,6 +19,16 @@ import pytest
 from lionherd.services.mcps.loader import create_mcp_callable, load_mcp_config, load_mcp_tools
 
 
+# Helper function for creating mock results
+def _create_text_content_mock(text):
+    """Create mock result with content.text pattern."""
+    mock_result = Mock()
+    mock_item = Mock()
+    mock_item.text = text
+    mock_result.content = [mock_item]
+    return mock_result
+
+
 @pytest.fixture
 def mock_registry():
     """Create mock ServiceRegistry."""
@@ -494,161 +504,85 @@ class TestCreateMCPCallable:
         assert callable_func.__name__ == tool_name
         assert callable(callable_func)
 
-    async def test_callable_execution_with_text_content(self):
-        """Test callable execution with standard text content."""
+    @pytest.mark.parametrize(
+        "result_type,call_kwargs",
+        [
+            ("text_content", {"arg1": "value1"}),
+            ("dict_text", {}),
+            ("list_dict", {}),
+            ("no_match", {}),
+            ("no_content", {}),
+            ("empty_content", {}),
+            ("multiple_items", {}),
+        ],
+        ids=[
+            "text_content",
+            "dict_text_content",
+            "list_dict_result",
+            "content_list_no_match",
+            "no_content_attribute",
+            "empty_content_list",
+            "multiple_content_items",
+        ],
+    )
+    async def test_callable_execution_content_patterns(
+        self, mock_mcp_client, patch_mcp_pool, result_type, call_kwargs
+    ):
+        """Test callable execution with various result content patterns.
+
+        Parametrized test covering 7 content extraction scenarios:
+        - text_content: content[0].text
+        - dict_text: content[0]["text"]
+        - list_dict: result[0]["text"] (no content attr)
+        - no_match: return full content list
+        - no_content: return raw result
+        - empty_content: return empty list
+        - multiple_items: return full content list
+        """
         server_config = {"server": "test_server"}
         tool_name = "test_tool"
 
-        # Mock result with content.text pattern
-        mock_result = Mock()
-        mock_item = Mock()
-        mock_item.text = "result text"
-        mock_result.content = [mock_item]
+        # Create mock result and compute expected value based on type
+        if result_type == "text_content":
+            mock_result = _create_text_content_mock("result text")
+            expected = "result text"
+        elif result_type == "dict_text":
+            mock_result = Mock()
+            mock_result.content = [{"type": "text", "text": "dict text result"}]
+            expected = "dict text result"
+        elif result_type == "list_dict":
+            mock_result = [{"type": "text", "text": "list dict text"}]
+            expected = "list dict text"
+        elif result_type == "no_match":
+            mock_result = Mock()
+            mock_result.content = [{"type": "other", "data": "something"}]
+            expected = mock_result.content
+        elif result_type == "no_content":
+            mock_result = {"data": "raw result"}
+            expected = mock_result
+        elif result_type == "empty_content":
+            mock_result = Mock()
+            mock_result.content = []
+            expected = []
+        elif result_type == "multiple_items":
+            mock_result = Mock()
+            mock_item1 = Mock()
+            mock_item1.text = "item1"
+            mock_item2 = Mock()
+            mock_item2.text = "item2"
+            mock_result.content = [mock_item1, mock_item2]
+            expected = mock_result.content
 
-        mock_client = AsyncMock()
-        mock_client.call_tool = AsyncMock(return_value=mock_result)
+        mock_mcp_client.call_tool = AsyncMock(return_value=mock_result)
 
-        with patch(
-            "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
-            return_value=mock_client,
-        ):
+        with patch_mcp_pool:
             callable_func = create_mcp_callable(server_config, tool_name)
-            result = await callable_func(arg1="value1")
+            result = await callable_func(**call_kwargs)
 
-            assert result == "result text"
-            mock_client.call_tool.assert_called_once_with(tool_name, {"arg1": "value1"})
-
-    async def test_callable_execution_with_dict_text_content(self):
-        """Test callable execution with dict text content (lines 215-217)."""
-        server_config = {"server": "test_server"}
-        tool_name = "test_tool"
-
-        # Mock result with dict content {"type": "text", "text": "..."}
-        mock_result = Mock()
-        mock_result.content = [{"type": "text", "text": "dict text result"}]
-
-        mock_client = AsyncMock()
-        mock_client.call_tool = AsyncMock(return_value=mock_result)
-
-        with patch(
-            "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
-            return_value=mock_client,
-        ):
-            callable_func = create_mcp_callable(server_config, tool_name)
-            result = await callable_func()
-
-            # Lines 215-217 covered
-            assert result == "dict text result"
-
-    async def test_callable_execution_with_list_dict_result(self):
-        """Test callable execution with list dict result (lines 218-221)."""
-        server_config = {"server": "test_server"}
-        tool_name = "test_tool"
-
-        # Mock result as list with dict (no content attribute)
-        mock_result = [{"type": "text", "text": "list dict text"}]
-
-        mock_client = AsyncMock()
-        mock_client.call_tool = AsyncMock(return_value=mock_result)
-
-        with patch(
-            "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
-            return_value=mock_client,
-        ):
-            callable_func = create_mcp_callable(server_config, tool_name)
-            result = await callable_func()
-
-            # Lines 218-221 covered
-            assert result == "list dict text"
-
-    async def test_callable_execution_with_content_list_no_match(self):
-        """Test callable execution returns full content when no pattern matches."""
-        server_config = {"server": "test_server"}
-        tool_name = "test_tool"
-
-        # Mock result with content list but no matching pattern
-        mock_result = Mock()
-        mock_result.content = [{"type": "other", "data": "something"}]
-
-        mock_client = AsyncMock()
-        mock_client.call_tool = AsyncMock(return_value=mock_result)
-
-        with patch(
-            "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
-            return_value=mock_client,
-        ):
-            callable_func = create_mcp_callable(server_config, tool_name)
-            result = await callable_func()
-
-            # Should return full content list
-            assert result == mock_result.content
-
-    async def test_callable_execution_no_content_attribute(self):
-        """Test callable execution with result lacking content attribute."""
-        server_config = {"server": "test_server"}
-        tool_name = "test_tool"
-
-        # Mock result with no content attribute and not a list
-        mock_result = {"data": "raw result"}
-
-        mock_client = AsyncMock()
-        mock_client.call_tool = AsyncMock(return_value=mock_result)
-
-        with patch(
-            "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
-            return_value=mock_client,
-        ):
-            callable_func = create_mcp_callable(server_config, tool_name)
-            result = await callable_func()
-
-            # Should return raw result
-            assert result == mock_result
-
-    async def test_callable_execution_empty_content_list(self):
-        """Test callable execution with empty content list."""
-        server_config = {"server": "test_server"}
-        tool_name = "test_tool"
-
-        mock_result = Mock()
-        mock_result.content = []  # Empty list
-
-        mock_client = AsyncMock()
-        mock_client.call_tool = AsyncMock(return_value=mock_result)
-
-        with patch(
-            "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
-            return_value=mock_client,
-        ):
-            callable_func = create_mcp_callable(server_config, tool_name)
-            result = await callable_func()
-
-            # Should return empty list
-            assert result == []
-
-    async def test_callable_execution_multiple_content_items(self):
-        """Test callable execution with multiple content items."""
-        server_config = {"server": "test_server"}
-        tool_name = "test_tool"
-
-        mock_result = Mock()
-        mock_item1 = Mock()
-        mock_item1.text = "item1"
-        mock_item2 = Mock()
-        mock_item2.text = "item2"
-        mock_result.content = [mock_item1, mock_item2]  # Multiple items
-
-        mock_client = AsyncMock()
-        mock_client.call_tool = AsyncMock(return_value=mock_result)
-
-        with patch(
-            "lionherd.services.mcps.wrapper.MCPConnectionPool.get_client",
-            return_value=mock_client,
-        ):
-            callable_func = create_mcp_callable(server_config, tool_name)
-            result = await callable_func()
-
-            # Should return full content list (len != 1)
-            assert result == mock_result.content
+            # Verify result matches expected
+            assert result == expected
+            # Verify mock was called correctly (all cases)
+            mock_mcp_client.call_tool.assert_called_once_with(tool_name, call_kwargs)
 
 
 # =============================================================================
