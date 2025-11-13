@@ -154,21 +154,34 @@ class TestEndpointConfig:
 
     def test_validate_request_options_dict_no_schema_gen(self):
         """Test request_options with dict when schema-gen NOT installed."""
-        # Mock the import to raise ImportError
-        with (
-            patch.dict(sys.modules, {"lionherd_core.libs.schema_handlers": None}),
-            patch("lionherd.services.types.endpoint.logger") as mock_logger,
-        ):
-            config = EndpointConfig(
-                name="test",
-                provider="test",
-                endpoint="/test",
-                request_options={"type": "object", "properties": {}},
-            )
-            # Should log warning and return None (graceful degradation)
-            assert config.request_options is None
-            mock_logger.warning.assert_called_once()
-            assert "datamodel-code-generator not installed" in str(mock_logger.warning.call_args)
+        # Mock the schema_handlers module to raise ImportError when accessed
+        import lionherd_core
+
+        # Save original if it exists
+        original_schema_handlers = getattr(lionherd_core, "schema_handlers", None)
+
+        # Delete the attribute to simulate it not being available
+        if hasattr(lionherd_core, "schema_handlers"):
+            delattr(lionherd_core, "schema_handlers")
+
+        try:
+            with patch("lionherd.services.types.endpoint.logger") as mock_logger:
+                config = EndpointConfig(
+                    name="test",
+                    provider="test",
+                    endpoint="/test",
+                    request_options={"type": "object", "properties": {}},
+                )
+                # Should log warning and return None (graceful degradation)
+                assert config.request_options is None
+                mock_logger.warning.assert_called_once()
+                assert "datamodel-code-generator not installed" in str(
+                    mock_logger.warning.call_args
+                )
+        finally:
+            # Restore original
+            if original_schema_handlers is not None:
+                lionherd_core.schema_handlers = original_schema_handlers
 
     def test_full_url_without_endpoint_params(self):
         """Test full_url property without endpoint params."""

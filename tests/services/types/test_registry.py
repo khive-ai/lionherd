@@ -220,9 +220,9 @@ class TestRegistryDiscovery:
         api_services = registry.list_by_tag("api")
         dev_services = registry.list_by_tag("development")
 
-        assert set(prod_services) == {"prod1", "prod2"}
-        assert api_services == ["prod1"]
-        assert dev_services == ["dev1"]
+        assert {m.name for m in prod_services} == {"prod1", "prod2"}
+        assert [m.name for m in api_services] == ["prod1"]
+        assert [m.name for m in dev_services] == ["dev1"]
 
     def test_count(self):
         """Test count() returns number of services."""
