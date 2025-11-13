@@ -505,15 +505,15 @@ class TestCreateMCPCallable:
         assert callable(callable_func)
 
     @pytest.mark.parametrize(
-        "result_type,expected,call_kwargs",
+        "result_type,call_kwargs",
         [
-            ("text_content", "result text", {"arg1": "value1"}),
-            ("dict_text", "dict text result", {}),
-            ("list_dict", "list dict text", {}),
-            ("no_match", "no_match_sentinel", {}),
-            ("no_content", {"data": "raw result"}, {}),
-            ("empty_content", [], {}),
-            ("multiple_items", "multiple_items_sentinel", {}),
+            ("text_content", {"arg1": "value1"}),
+            ("dict_text", {}),
+            ("list_dict", {}),
+            ("no_match", {}),
+            ("no_content", {}),
+            ("empty_content", {}),
+            ("multiple_items", {}),
         ],
         ids=[
             "text_content",
@@ -526,7 +526,7 @@ class TestCreateMCPCallable:
         ],
     )
     async def test_callable_execution_content_patterns(
-        self, mock_mcp_client, patch_mcp_pool, result_type, expected, call_kwargs
+        self, mock_mcp_client, patch_mcp_pool, result_type, call_kwargs
     ):
         """Test callable execution with various result content patterns.
 
@@ -542,24 +542,28 @@ class TestCreateMCPCallable:
         server_config = {"server": "test_server"}
         tool_name = "test_tool"
 
-        # Create mock result based on type
+        # Create mock result and compute expected value based on type
         if result_type == "text_content":
             mock_result = _create_text_content_mock("result text")
+            expected = "result text"
         elif result_type == "dict_text":
             mock_result = Mock()
             mock_result.content = [{"type": "text", "text": "dict text result"}]
+            expected = "dict text result"
         elif result_type == "list_dict":
             mock_result = [{"type": "text", "text": "list dict text"}]
+            expected = "list dict text"
         elif result_type == "no_match":
             mock_result = Mock()
             mock_result.content = [{"type": "other", "data": "something"}]
-            expected = mock_result.content  # Update expected to actual content
+            expected = mock_result.content
         elif result_type == "no_content":
             mock_result = {"data": "raw result"}
-            expected = mock_result  # Update expected to raw result
+            expected = mock_result
         elif result_type == "empty_content":
             mock_result = Mock()
             mock_result.content = []
+            expected = []
         elif result_type == "multiple_items":
             mock_result = Mock()
             mock_item1 = Mock()
@@ -567,7 +571,7 @@ class TestCreateMCPCallable:
             mock_item2 = Mock()
             mock_item2.text = "item2"
             mock_result.content = [mock_item1, mock_item2]
-            expected = mock_result.content  # Update expected to full list
+            expected = mock_result.content
 
         mock_mcp_client.call_tool = AsyncMock(return_value=mock_result)
 
@@ -575,9 +579,10 @@ class TestCreateMCPCallable:
             callable_func = create_mcp_callable(server_config, tool_name)
             result = await callable_func(**call_kwargs)
 
+            # Verify result matches expected
             assert result == expected
-            if call_kwargs:  # Only check call args for text_content test
-                mock_mcp_client.call_tool.assert_called_once_with(tool_name, call_kwargs)
+            # Verify mock was called correctly (all cases)
+            mock_mcp_client.call_tool.assert_called_once_with(tool_name, call_kwargs)
 
 
 # =============================================================================
