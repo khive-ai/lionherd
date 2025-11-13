@@ -62,7 +62,7 @@ class ServiceRegistry:
         """List all registered service names."""
         return list(self._name_index.keys())
 
-    def list_by_tag(self, tag: str) -> Pile["iModel"]:
+    def list_by_tag(self, tag: str) -> Pile[iModel]:
         """Get services with specific tag."""
         return self._pile[lambda m: tag in m.tags]
 
