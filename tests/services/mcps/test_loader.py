@@ -18,6 +18,7 @@ import pytest
 
 from lionherd.services.mcps.loader import create_mcp_callable, load_mcp_config, load_mcp_tools
 
+
 # Helper function for creating mock results
 def _create_text_content_mock(text):
     """Create mock result with content.text pattern."""
